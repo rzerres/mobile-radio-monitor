@@ -2,6 +2,7 @@
 bin_PROGRAMS = mobile-radio-monitor
 
 mobile_radio_monitor_SOURCES = \
+	mrm-graph.h mrm-graph.c \
 	mrm-main.c
 
 mobile_radio_monitor_CPPFLAGS = \
