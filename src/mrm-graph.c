@@ -46,6 +46,7 @@ G_DEFINE_TYPE (MrmGraph, mrm_graph, GTK_TYPE_BOX)
 
 enum {
     PROP_0,
+    PROP_N_SERIES,
     PROP_Y_MIN,
     PROP_Y_MAX,
     PROP_Y_UNITS,
@@ -55,12 +56,25 @@ enum {
 
 static GParamSpec *properties[PROP_LAST];
 
+typedef struct {
+    gchar *label;
+    GdkRGBA color;
+    gdouble data[NUM_POINTS];
+} Series;
+
 struct _MrmGraphPrivate {
     /* Properties */
+    guint    n_series;
     gdouble  y_min;
     gdouble  y_max;
     gchar   *y_units;
     guint    y_n_separators;
+
+    /* The series data block */
+    Series *series;
+
+    /* The current step index */
+    guint step_index;
 
     /* The drawing area */
     GtkWidget *drawing_area;
@@ -73,6 +87,96 @@ struct _MrmGraphPrivate {
     /* The background surface */
     cairo_surface_t *background;
 };
+
+/*****************************************************************************/
+/* Series management */
+
+static void
+free_series (MrmGraph *self)
+{
+    guint i;
+
+    if (!self->priv->series)
+        return;
+
+    for (i = 0; i < self->priv->n_series; i++)
+        g_free (self->priv->series[i].label);
+    g_free (self->priv->series);
+    self->priv->series = NULL;
+}
+
+static void
+allocate_series (MrmGraph *self)
+{
+    guint i;
+
+    if (!self->priv->n_series)
+        return;
+
+    self->priv->series = g_new0 (Series, self->priv->n_series);
+    for (i = 0; i < self->priv->n_series; i++) {
+        guint j;
+
+        for (j = 0; j < NUM_POINTS; j++)
+            self->priv->series[i].data[j] = -G_MAXDOUBLE;
+    }
+}
+
+void
+mrm_graph_setup_series (MrmGraph *self,
+                        guint series_index,
+                        const gchar *label,
+                        gdouble color_red,
+                        gdouble color_green,
+                        gdouble color_blue)
+{
+    g_assert_cmpuint (series_index, <, self->priv->n_series);
+
+    g_free (self->priv->series[series_index].label);
+    self->priv->series[series_index].label = g_strdup (label);
+    self->priv->series[series_index].color.red = color_red;
+    self->priv->series[series_index].color.green = color_green;
+    self->priv->series[series_index].color.blue = color_blue;
+    self->priv->series[series_index].color.alpha = 1.0;
+}
+
+/*****************************************************************************/
+/* Adding new values to the series */
+
+void
+mrm_graph_step_init (MrmGraph *self)
+{
+    guint i;
+
+    /* Update step and clear all values in all series for this index */
+    self->priv->step_index++;
+    if (self->priv->step_index == NUM_POINTS)
+        self->priv->step_index = 0;
+
+    g_assert_cmpuint (self->priv->step_index, <, NUM_POINTS);
+
+    for (i = 0; i < self->priv->n_series; i++)
+        self->priv->series[i].data[self->priv->step_index] = -G_MAXDOUBLE;
+}
+
+void
+mrm_graph_step_set_value (MrmGraph *self,
+                          guint series_index,
+                          gdouble value)
+{
+    g_assert_cmpuint (series_index, <, self->priv->n_series);
+    g_assert_cmpuint (self->priv->step_index, <, NUM_POINTS);
+
+    self->priv->series[series_index].data[self->priv->step_index] =
+        CLAMP (value, self->priv->y_min, self->priv->y_max);
+}
+
+void
+mrm_graph_step_finish (MrmGraph *self)
+{
+    /* Repaint */
+    gtk_widget_queue_draw (self->priv->drawing_area);
+}
 
 /*****************************************************************************/
 /* Graph background management */
@@ -292,9 +396,10 @@ mrm_graph_init (MrmGraph *self)
     self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, MRM_TYPE_GRAPH, MrmGraphPrivate);
 
     /* Defaults */
-    self->priv->y_units = g_strdup ("%");
+    self->priv->n_series = 0;
     self->priv->y_min = 0.0;
     self->priv->y_max = 100.0;
+    self->priv->y_units = g_strdup ("%");
     self->priv->y_n_separators = 5;
 }
 
@@ -307,6 +412,11 @@ set_property (GObject *object,
     MrmGraph *self = MRM_GRAPH (object);
 
     switch (prop_id) {
+    case PROP_N_SERIES:
+        free_series (self);
+        self->priv->n_series = g_value_get_uint (value);
+        allocate_series (self);
+        break;
     case PROP_Y_MIN:
         self->priv->y_min = g_value_get_double (value);
         break;
@@ -335,6 +445,9 @@ get_property (GObject *object,
     MrmGraph *self = MRM_GRAPH (object);
 
     switch (prop_id) {
+    case PROP_N_SERIES:
+        g_value_set_uint (value, self->priv->n_series);
+        break;
     case PROP_Y_MIN:
         g_value_set_double (value, self->priv->y_min);
         break;
@@ -358,6 +471,8 @@ finalize (GObject *object)
 {
     MrmGraph *self = MRM_GRAPH (object);
 
+    if (self->priv->series)
+        free_series (self);
     g_free (self->priv->y_units);
 
     G_OBJECT_CLASS (mrm_graph_parent_class)->finalize (object);
@@ -373,6 +488,16 @@ mrm_graph_class_init (MrmGraphClass *klass)
     object_class->get_property = get_property;
     object_class->set_property = set_property;
     object_class->finalize = finalize;
+
+    properties[PROP_N_SERIES] =
+        g_param_spec_uint ("n-series",
+                           "Number of series",
+                           "Number of series to handle in the graph",
+                           0,
+                           G_MAXUINT,
+                           0,
+                           G_PARAM_READWRITE);
+    g_object_class_install_property (object_class, PROP_N_SERIES, properties[PROP_N_SERIES]);
 
     properties[PROP_Y_MIN] =
         g_param_spec_double ("y-min",
