@@ -16,7 +16,7 @@
 #ifndef _MRM_GRAPH_H_
 #define _MRM_GRAPH_H_
 
-#include <glib-object.h>
+#include <gtk/gtk.h>
 
 G_BEGIN_DECLS
 
@@ -39,18 +39,18 @@ typedef struct _MrmGraphPrivate MrmGraphPrivate;
  */
 struct _MrmGraph {
     /*< private >*/
-    GObject parent;
+    GtkBox parent;
     MrmGraphPrivate *priv;
 };
 
 struct _MrmGraphClass {
     /*< private >*/
-    GObjectClass parent;
+    GtkBoxClass parent;
 };
 
 GType mrm_graph_get_type (void);
 
-MrmGraph *mrm_graph_new (void);
+GtkWidget *mrm_graph_new (void);
 
 G_END_DECLS
 
