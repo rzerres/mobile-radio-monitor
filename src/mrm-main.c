@@ -13,8 +13,25 @@
  * Copyright (C) 2013 Aleksander Morgado <aleksander@gnu.org>
  */
 
+#include <gtk/gtk.h>
 
-int main (const char **argv)
+#include "mrm-graph.h"
+
+gint main (gint argc, gchar **argv)
 {
+    GtkWidget *window;
+    GtkWidget *graph;
+
+    gtk_init (&argc, &argv);
+
+    window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+
+    graph = mrm_graph_new ();
+    gtk_widget_show (graph);
+    gtk_container_add (GTK_CONTAINER (window), graph);
+    gtk_widget_show (window);
+
+    gtk_main ();
+
     return 0;
 }
