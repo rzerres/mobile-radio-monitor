@@ -17,11 +17,26 @@
 
 #include "mrm-graph.h"
 
-gint main (gint argc, gchar **argv)
-{
-    GtkWidget *window;
-    GtkWidget *graph;
+static GtkWidget *window;
+static GtkWidget *graph;
 
+static gboolean
+update (gpointer unused)
+{
+    static gdouble value = -113.0;
+
+    mrm_graph_step_init (MRM_GRAPH (graph));
+    mrm_graph_step_set_value (MRM_GRAPH (graph), 0, value);
+    mrm_graph_step_finish (MRM_GRAPH (graph));
+
+    value += 1.0;
+    if (value > -49.0)
+        value = -113.0;
+}
+
+gint
+main (gint argc, gchar **argv)
+{
     gtk_init (&argc, &argv);
 
     window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
@@ -32,10 +47,15 @@ gint main (gint argc, gchar **argv)
                   "y-min",          -113.0,
                   "y-n-separators", 4,
                   "y-units",        "dBs",
+                  "n-series",       1,
                   NULL);
     gtk_widget_show (graph);
     gtk_container_add (GTK_CONTAINER (window), graph);
     gtk_widget_show (window);
+
+    mrm_graph_setup_series (MRM_GRAPH (graph), 0, "RSSI", 255, 0, 0);
+
+    g_timeout_add_seconds (1, (GSourceFunc) update, NULL);
 
     gtk_main ();
 

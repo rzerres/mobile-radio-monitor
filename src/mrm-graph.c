@@ -21,7 +21,7 @@
 #include <math.h>
 
 /* Number of points to show in the graph */
-#define NUM_POINTS 60
+#define NUM_POINTS 61
 
 /* Number of horizontal separators in the graph */
 #define N_HORIZONTAL_SEPARATORS 6
@@ -86,6 +86,12 @@ struct _MrmGraphPrivate {
 
     /* The background surface */
     cairo_surface_t *background;
+
+    /* Useful coordinates updated whenever background is changed */
+    gdouble plot_area_offset_x0;
+    gdouble plot_area_offset_y0;
+    gdouble plot_area_width;
+    gdouble plot_area_height;
 };
 
 /*****************************************************************************/
@@ -148,13 +154,6 @@ mrm_graph_step_init (MrmGraph *self)
 {
     guint i;
 
-    /* Update step and clear all values in all series for this index */
-    self->priv->step_index++;
-    if (self->priv->step_index == NUM_POINTS)
-        self->priv->step_index = 0;
-
-    g_assert_cmpuint (self->priv->step_index, <, NUM_POINTS);
-
     for (i = 0; i < self->priv->n_series; i++)
         self->priv->series[i].data[self->priv->step_index] = -G_MAXDOUBLE;
 }
@@ -174,6 +173,13 @@ mrm_graph_step_set_value (MrmGraph *self,
 void
 mrm_graph_step_finish (MrmGraph *self)
 {
+    /* Update step */
+    self->priv->step_index++;
+    if (self->priv->step_index == NUM_POINTS)
+        self->priv->step_index = 0;
+
+    g_assert_cmpuint (self->priv->step_index, <, NUM_POINTS);
+
     /* Repaint */
     gtk_widget_queue_draw (self->priv->drawing_area);
 }
@@ -203,7 +209,6 @@ graph_background_draw (MrmGraph *self)
     gdouble dash[2] = { 1.0, 2.0 };
     guint i;
     guint vertical_separator_relative_height;
-    guint real_draw_height;
 
     /* Create surface ad cairo context */
     gtk_widget_get_allocation (self->priv->drawing_area, &allocation);
@@ -230,14 +235,22 @@ graph_background_draw (MrmGraph *self)
     pango_layout_set_font_description (layout, font_desc);
     pango_font_description_free (font_desc);
 
+    /* Compute actual plotting area (i.e. area where the lines will be drawn).
+     * The plot area height is computed based on the number of separators and the
+     * fixed size of each separator. */
+    vertical_separator_relative_height = (guint)(((gdouble)(self->priv->draw_height - BOTTOM_LABEL_MARGIN)) /
+                                                 ((gdouble)self->priv->y_n_separators));
+    self->priv->plot_area_height = vertical_separator_relative_height * self->priv->y_n_separators;
+    self->priv->plot_area_width = self->priv->draw_width - INDENT - RIGHT_LABEL_MARGIN;
+    self->priv->plot_area_offset_x0 = FRAME_WIDTH + INDENT + 1;
+    self->priv->plot_area_offset_y0 = FRAME_WIDTH + self->priv->plot_area_height - 1;
+
     /* Draw background rectangle */
     cairo_translate (cr, FRAME_WIDTH, FRAME_WIDTH);
     cairo_set_source_rgb (cr, 1.0, 1.0, 1.0);
-    vertical_separator_relative_height = (self->priv->draw_height - BOTTOM_LABEL_MARGIN) / self->priv->y_n_separators;
-    real_draw_height = vertical_separator_relative_height * self->priv->y_n_separators;
-    cairo_rectangle (cr, INDENT, 0,
-                     self->priv->draw_width - INDENT - RIGHT_LABEL_MARGIN,
-                     real_draw_height);
+    cairo_rectangle (cr,
+                     INDENT, 0,
+                     self->priv->plot_area_width, self->priv->plot_area_height);
     cairo_fill (cr);
 
     /* Draw horizontal lines (vertical separators)  */
@@ -291,7 +304,7 @@ graph_background_draw (MrmGraph *self)
         x = i * (self->priv->draw_width - RIGHT_LABEL_MARGIN - INDENT) / N_HORIZONTAL_SEPARATORS;
         cairo_set_source_rgba (cr, 0, 0, 0, 0.75);
         cairo_move_to (cr, (ceil (x) + 0.5) + INDENT, 0.5);
-        cairo_line_to (cr, (ceil (x) + 0.5) + INDENT, real_draw_height + 4.5);
+        cairo_line_to (cr, (ceil (x) + 0.5) + INDENT, self->priv->plot_area_height + 4.5);
         cairo_stroke (cr);
 
         /* Draw caption */
@@ -337,10 +350,16 @@ graph_configure (GtkWidget *widget,
 
 static gboolean
 graph_draw (GtkWidget *widget,
-            cairo_t *cr,
+            cairo_t *context,
             MrmGraph *self)
 {
     GdkWindow *window;
+    gdouble sample_width;
+    cairo_t *cr;
+    guint i;
+    gdouble x_ratio;
+    gdouble y_ratio;
+    guint current_step_index;
 
     window = gtk_widget_get_window (self->priv->drawing_area);
 
@@ -353,7 +372,81 @@ graph_draw (GtkWidget *widget,
         cairo_pattern_destroy (pattern);
     }
 
-    return FALSE;
+    cr = gdk_cairo_create (window);
+    cairo_set_line_width (cr, 1);
+    cairo_set_line_cap (cr, CAIRO_LINE_CAP_ROUND);
+    cairo_set_line_join (cr, CAIRO_LINE_JOIN_ROUND);
+    cairo_rectangle (cr,
+                     self->priv->plot_area_offset_x0,
+                     self->priv->plot_area_offset_y0 - self->priv->plot_area_height,
+                     self->priv->plot_area_width,
+                     self->priv->plot_area_height);
+    cairo_clip (cr);
+
+    /* Compute ratios to convert from values to pixels */
+    x_ratio = ((gdouble)self->priv->plot_area_width) / ((gdouble)NUM_POINTS - 1);
+    y_ratio = ((gdouble)self->priv->plot_area_height) / ((gdouble)(self->priv->y_max - self->priv->y_min));
+
+    /* Mark which is the current point */
+    if (self->priv->step_index == 0)
+        current_step_index = NUM_POINTS - 1;
+    else
+        current_step_index = self->priv->step_index - 1;
+
+    /* Print series */
+    for (i = 0; i < self->priv->n_series; i++) {
+        gdouble y;
+        guint j;
+        guint seconds;
+
+        /* Set series color */
+        gdk_cairo_set_source_rgba (cr, &(self->priv->series[i].color));
+
+        /* Convert the current (seconds,value) to the corresponding amount of pixels */
+        y = (self->priv->series[i].data[current_step_index] - self->priv->y_min) * y_ratio;
+
+        cairo_move_to (cr,
+                       self->priv->plot_area_offset_x0,
+                       self->priv->plot_area_offset_y0 - y);
+
+        seconds = 0;
+        j = current_step_index;
+        do {
+            gdouble x;
+
+            seconds++;
+            if (j == 0)
+                j = NUM_POINTS - 1;
+            else
+                j--;
+
+            if (self->priv->series[i].data[j] < self->priv->y_min)
+                continue;
+
+            /* Convert the previous (seconds,value) to the corresponding amount of pixels */
+            x = seconds * x_ratio;
+            y = (self->priv->series[i].data[j] - self->priv->y_min) * y_ratio;
+
+            cairo_line_to (cr,
+                           self->priv->plot_area_offset_x0 + x,
+                           self->priv->plot_area_offset_y0 - y);
+
+            /* cairo_curve_to (cr, */
+            /*                 self->priv->plot_area_offset_x0 + ((seconds - 0.5f) * (self->priv->plot_area_width / NUM_POINTS)), */
+            /*                 (1.0f - self->priv->series[i].data[j > 0 ? j - 1 : NUM_POINTS - 1]) * self->priv->plot_area_height + 3.5f, */
+            /*                 self->priv->plot_area_offset_x0 + ((seconds - 0.5f) * (self->priv->plot_area_width / NUM_POINTS)), */
+            /*                 (1.0f - self->priv->series[i].data[j]) * self->priv->plot_area_height + 3.5f, */
+            /*                 self->priv->plot_area_offset_x0 + (seconds * (self->priv->plot_area_width / NUM_POINTS)), */
+            /*                 (1.0f - self->priv->series[i].data[j]) * self->priv->plot_area_height + 3.5f); */
+
+        } while (j != self->priv->step_index);
+
+        cairo_stroke (cr);
+    }
+
+    cairo_destroy (cr);
+
+    return TRUE;
 }
 
 /*****************************************************************************/
