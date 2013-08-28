@@ -27,6 +27,12 @@ gint main (gint argc, gchar **argv)
     window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 
     graph = mrm_graph_new ();
+    g_object_set (graph,
+                  "y-max",          -49.0,
+                  "y-min",          -113.0,
+                  "y-n-separators", 4,
+                  "y-units",        "dBs",
+                  NULL);
     gtk_widget_show (graph);
     gtk_container_add (GTK_CONTAINER (window), graph);
     gtk_widget_show (window);

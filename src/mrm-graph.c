@@ -23,9 +23,6 @@
 /* Number of points to show in the graph */
 #define NUM_POINTS 60
 
-/* Number of vertical separators in the graph */
-#define N_VERTICAL_SEPARATORS 4
-
 /* Number of horizontal separators in the graph */
 #define N_HORIZONTAL_SEPARATORS 6
 
@@ -47,7 +44,24 @@
 
 G_DEFINE_TYPE (MrmGraph, mrm_graph, GTK_TYPE_BOX)
 
+enum {
+    PROP_0,
+    PROP_Y_MIN,
+    PROP_Y_MAX,
+    PROP_Y_UNITS,
+    PROP_Y_N_SEPARATORS,
+    PROP_LAST
+};
+
+static GParamSpec *properties[PROP_LAST];
+
 struct _MrmGraphPrivate {
+    /* Properties */
+    gdouble  y_min;
+    gdouble  y_max;
+    gchar   *y_units;
+    guint    y_n_separators;
+
     /* The drawing area */
     GtkWidget *drawing_area;
 
@@ -115,8 +129,8 @@ graph_background_draw (MrmGraph *self)
     /* Draw background rectangle */
     cairo_translate (cr, FRAME_WIDTH, FRAME_WIDTH);
     cairo_set_source_rgb (cr, 1.0, 1.0, 1.0);
-    vertical_separator_relative_height = (self->priv->draw_height - BOTTOM_LABEL_MARGIN) / N_VERTICAL_SEPARATORS;
-    real_draw_height = vertical_separator_relative_height * N_VERTICAL_SEPARATORS;
+    vertical_separator_relative_height = (self->priv->draw_height - BOTTOM_LABEL_MARGIN) / self->priv->y_n_separators;
+    real_draw_height = vertical_separator_relative_height * self->priv->y_n_separators;
     cairo_rectangle (cr, INDENT, 0,
                      self->priv->draw_width - INDENT - RIGHT_LABEL_MARGIN,
                      real_draw_height);
@@ -125,15 +139,14 @@ graph_background_draw (MrmGraph *self)
     /* Draw horizontal lines (vertical separators)  */
     cairo_set_line_width (cr, 1.0);
     cairo_set_dash (cr, dash, 2, 0);
-    for (i = 0; i <= N_VERTICAL_SEPARATORS; ++i) {
+    for (i = 0; i <= self->priv->y_n_separators; ++i) {
         PangoRectangle extents;
         gdouble y;
-        guint max = 100;
         gchar *caption;
 
         if (i == 0)
             y = 0.5 + FONTSIZE / 2.0;
-        else if (i == N_VERTICAL_SEPARATORS)
+        else if (i == self->priv->y_n_separators)
             y = i * vertical_separator_relative_height + 0.5;
         else
             y = i * vertical_separator_relative_height + FONTSIZE / 2.0;
@@ -149,7 +162,9 @@ graph_background_draw (MrmGraph *self)
 
         /* Draw caption */
         gdk_cairo_set_source_rgba (cr, &fg);
-        caption = g_strdup_printf ("%d %%", max - i * (max / N_VERTICAL_SEPARATORS));
+        caption = g_strdup_printf ("%d %s",
+                                   (gint)(self->priv->y_max - i * ((self->priv->y_max - self->priv->y_min) / self->priv->y_n_separators)),
+                                   self->priv->y_units);
         pango_layout_set_alignment (layout, PANGO_ALIGN_LEFT);
         pango_layout_set_text (layout, caption, -1);
         pango_layout_get_extents (layout, NULL, &extents);
@@ -275,6 +290,77 @@ static void
 mrm_graph_init (MrmGraph *self)
 {
     self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, MRM_TYPE_GRAPH, MrmGraphPrivate);
+
+    /* Defaults */
+    self->priv->y_units = g_strdup ("%");
+    self->priv->y_min = 0.0;
+    self->priv->y_max = 100.0;
+    self->priv->y_n_separators = 5;
+}
+
+static void
+set_property (GObject *object,
+              guint prop_id,
+              const GValue *value,
+              GParamSpec *pspec)
+{
+    MrmGraph *self = MRM_GRAPH (object);
+
+    switch (prop_id) {
+    case PROP_Y_MIN:
+        self->priv->y_min = g_value_get_double (value);
+        break;
+    case PROP_Y_MAX:
+        self->priv->y_max = g_value_get_double (value);
+        break;
+    case PROP_Y_UNITS:
+        g_free (self->priv->y_units);
+        self->priv->y_units = g_value_dup_string (value);
+        break;
+    case PROP_Y_N_SEPARATORS:
+        self->priv->y_n_separators = g_value_get_uint (value);
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+        break;
+    }
+}
+
+static void
+get_property (GObject *object,
+              guint prop_id,
+              GValue *value,
+              GParamSpec *pspec)
+{
+    MrmGraph *self = MRM_GRAPH (object);
+
+    switch (prop_id) {
+    case PROP_Y_MIN:
+        g_value_set_double (value, self->priv->y_min);
+        break;
+    case PROP_Y_MAX:
+        g_value_set_double (value, self->priv->y_max);
+        break;
+    case PROP_Y_UNITS:
+        g_value_set_string (value, self->priv->y_units);
+        break;
+    case PROP_Y_N_SEPARATORS:
+        g_value_set_uint (value, self->priv->y_n_separators);
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+        break;
+    }
+}
+
+static void
+finalize (GObject *object)
+{
+    MrmGraph *self = MRM_GRAPH (object);
+
+    g_free (self->priv->y_units);
+
+    G_OBJECT_CLASS (mrm_graph_parent_class)->finalize (object);
 }
 
 static void
@@ -283,4 +369,46 @@ mrm_graph_class_init (MrmGraphClass *klass)
     GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
     g_type_class_add_private (object_class, sizeof (MrmGraphPrivate));
+
+    object_class->get_property = get_property;
+    object_class->set_property = set_property;
+    object_class->finalize = finalize;
+
+    properties[PROP_Y_MIN] =
+        g_param_spec_double ("y-min",
+                             "Minumum Y value",
+                             "Minimum value in the Y axis",
+                             -G_MAXDOUBLE,
+                             G_MAXDOUBLE,
+                             0.0,
+                             G_PARAM_READWRITE);
+    g_object_class_install_property (object_class, PROP_Y_MIN, properties[PROP_Y_MIN]);
+
+    properties[PROP_Y_MAX] =
+        g_param_spec_double ("y-max",
+                             "Maximum Y value",
+                             "Maximum value in the Y axis",
+                             -G_MAXDOUBLE,
+                             G_MAXDOUBLE,
+                             100.0,
+                             G_PARAM_READWRITE);
+    g_object_class_install_property (object_class, PROP_Y_MAX, properties[PROP_Y_MAX]);
+
+    properties[PROP_Y_UNITS] =
+        g_param_spec_string ("y-units",
+                             "Y units",
+                             "Units in the Y axis",
+                             "%",
+                             G_PARAM_READWRITE);
+    g_object_class_install_property (object_class, PROP_Y_UNITS, properties[PROP_Y_UNITS]);
+
+    properties[PROP_Y_N_SEPARATORS] =
+        g_param_spec_uint ("y-n-separators",
+                           "Number of vertical separators",
+                           "Number of horizontal lines splitting the graph in the Y axis",
+                           1,
+                           G_MAXUINT,
+                           5,
+                           G_PARAM_READWRITE);
+    g_object_class_install_property (object_class, PROP_Y_N_SEPARATORS, properties[PROP_Y_N_SEPARATORS]);
 }
