@@ -12,4 +12,5 @@ mobile_radio_monitor_CPPFLAGS = \
 
 mobile_radio_monitor_LDADD = \
 	$(MM_LIBS) \
-	$(GTK_LIBS)
+	$(GTK_LIBS) \
+	-lm
