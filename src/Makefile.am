@@ -12,12 +12,12 @@ mobile_radio_monitor_SOURCES = \
 	mrm-main.c
 
 mobile_radio_monitor_CPPFLAGS = \
-	$(MM_CFLAGS) \
+	$(QMI_CFLAGS) \
 	$(GTK_CFLAGS) \
 	-I$(top_srcdir)
 
 mobile_radio_monitor_LDADD = \
-	$(MM_LIBS) \
+	$(QMI_LIBS) \
 	$(GTK_LIBS) \
 	-lm
 

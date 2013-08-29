@@ -6,12 +6,12 @@ test_graph_SOURCES = \
 	test-graph.c
 
 test_graph_CPPFLAGS = \
-	$(MM_CFLAGS) \
+	$(QMI_CFLAGS) \
 	$(GTK_CFLAGS) \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/src
 
 test_graph_LDADD = \
-	$(MM_LIBS) \
+	$(QMI_LIBS) \
 	$(GTK_LIBS) \
 	-lm
