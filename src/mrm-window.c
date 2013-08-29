@@ -26,6 +26,45 @@ G_DEFINE_TYPE_WITH_PRIVATE (MrmWindow, mrm_window, GTK_TYPE_APPLICATION_WINDOW)
 
 /******************************************************************************/
 
+static void
+error_dialog (const gchar *primary_text,
+              const gchar *secondary_text,
+              GtkWindow *parent)
+{
+	GtkWidget *dialog;
+
+	dialog = gtk_message_dialog_new (parent,
+                                     0,
+                                     GTK_MESSAGE_ERROR,
+                                     GTK_BUTTONS_OK,
+                                     NULL);
+	if (parent)
+		gtk_window_set_modal (GTK_WINDOW (dialog), TRUE);
+
+	g_object_set (dialog,
+                  "text", primary_text,
+                  "secondary-text", secondary_text,
+                  NULL);
+	g_signal_connect (dialog,
+                      "response",
+                      G_CALLBACK (gtk_widget_destroy),
+                      NULL);
+
+	gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_OK);
+	gtk_widget_show (GTK_WIDGET (dialog));
+}
+
+/******************************************************************************/
+
+void
+mrm_window_open (MrmWindow *self,
+                 GFile *device_file)
+{
+    error_dialog ("File doesn't exist", NULL, GTK_WINDOW (self));
+}
+
+/******************************************************************************/
+
 GtkWidget *
 mrm_window_new (MrmApp *application)
 {

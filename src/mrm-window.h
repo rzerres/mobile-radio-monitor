@@ -44,7 +44,9 @@ struct _MrmWindowClass {
 
 GType mrm_window_get_type(void) G_GNUC_CONST;
 
-GtkWidget *mrm_window_new (MrmApp *application);
+GtkWidget *mrm_window_new  (MrmApp *application);
+void       mrm_window_open (MrmWindow *self,
+                            GFile *device_file);
 
 G_END_DECLS
 

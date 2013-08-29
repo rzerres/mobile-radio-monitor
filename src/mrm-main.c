@@ -19,13 +19,6 @@
 
 #include "mrm-app.h"
 
-static void
-activate_cb (GtkApplication *app)
-{
-    /* This is the primary instance */
-    mrm_app_start (MRM_APP (app));
-}
-
 gint
 main (gint argc, gchar **argv)
 {
@@ -35,7 +28,6 @@ main (gint argc, gchar **argv)
     setlocale (LC_ALL, "");
 
     app = mrm_app_new ();
-    g_signal_connect (app, "activate", G_CALLBACK (activate_cb), NULL);
 
     /* Set it as the default application */
     g_application_set_default (G_APPLICATION (app));

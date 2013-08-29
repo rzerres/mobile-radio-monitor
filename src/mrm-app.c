@@ -39,12 +39,13 @@ peek_main_window (MrmApp *self)
     return (l ? GTK_WIDGET (l->data) : NULL);
 }
 
-void
-mrm_app_start (MrmApp *self)
+static void
+ensure_main_window (MrmApp *self)
 {
     GtkWidget *window;
 
-    g_assert (peek_main_window (self) == NULL);
+    if (peek_main_window (self))
+        return;
 
     window = mrm_window_new (self);
     gtk_application_add_window (GTK_APPLICATION (self), GTK_WINDOW (window));
@@ -101,6 +102,57 @@ static GActionEntry app_entries[] = {
 /******************************************************************************/
 
 static void
+activate (GApplication *application)
+{
+    ensure_main_window (MRM_APP (application));
+}
+
+/******************************************************************************/
+
+static void
+open (GApplication *application,
+      GFile **files,
+      gint n_files,
+      const gchar *hint)
+{
+    GtkWidget *window;
+    gchar *path;
+    gchar *display;
+
+    /* No files to open, just return */
+    if (n_files <= 0)
+        return;
+
+    /* More than one file; warn */
+    if (n_files > 1) {
+        guint i;
+
+        g_warning ("Too many device files given (%d); only one expected.", n_files);
+        for (i = 1; i < n_files; i++) {
+            path = g_file_get_path (files[i]);
+            display = g_filename_display_name (path);
+            g_warning ("  Ignoring device file '%s'...", display);
+            g_free (path);
+            g_free (display);
+        }
+    }
+
+    /* Exactly one file, open it */
+    path = g_file_get_path (files[0]);
+    display = g_filename_display_name (path);
+    g_debug ("Opening device file '%s'...", display);
+    g_free (path);
+    g_free (display);
+
+    /* Peek window and open device file */
+    ensure_main_window (MRM_APP (application));
+    window = peek_main_window (MRM_APP (application));
+    mrm_window_open (MRM_WINDOW (window), files[0]);
+}
+
+/******************************************************************************/
+
+static void
 startup (GApplication *application)
 {
     MrmApp *self = MRM_APP (application);
@@ -139,7 +191,7 @@ mrm_app_new (void)
 {
     return g_object_new (MRM_TYPE_APP,
                          "application-id",   "es.aleksander.MobileRadioMonitor",
-                         "flags",            G_APPLICATION_FLAGS_NONE,
+                         "flags",            G_APPLICATION_HANDLES_OPEN,
                          "register-session", TRUE,
                          NULL);
 }
@@ -162,4 +214,6 @@ mrm_app_class_init (MrmAppClass *klass)
     g_type_class_add_private (object_class, sizeof (MrmAppPrivate));
 
     application_class->startup = startup;
+    application_class->activate = activate;
+    application_class->open = open;
 }
