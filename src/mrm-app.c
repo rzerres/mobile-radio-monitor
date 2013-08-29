@@ -190,9 +190,8 @@ MrmApp *
 mrm_app_new (void)
 {
     return g_object_new (MRM_TYPE_APP,
-                         "application-id",   "es.aleksander.MobileRadioMonitor",
-                         "flags",            G_APPLICATION_HANDLES_OPEN,
-                         "register-session", TRUE,
+                         "application-id", "es.aleksander.MobileRadioMonitor",
+                         "flags",          G_APPLICATION_HANDLES_OPEN,
                          NULL);
 }
 
