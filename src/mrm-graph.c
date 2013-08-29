@@ -395,24 +395,30 @@ graph_draw (GtkWidget *widget,
 
     /* Print series */
     for (i = 0; i < self->priv->n_series; i++) {
-        gdouble y;
         guint j;
         guint seconds;
+        gdouble x1;
+        gdouble y1;
+        gdouble x2;
+        gdouble y2;
+        gdouble x3;
+        gdouble y3;
 
         /* Set series color */
         gdk_cairo_set_source_rgba (cr, &(self->priv->series[i].color));
 
         /* Convert the current (seconds,value) to the corresponding amount of pixels */
-        y = (self->priv->series[i].data[current_step_index] - self->priv->y_min) * y_ratio;
+        x3 = 0;
+        y3 = (self->priv->series[i].data[current_step_index] - self->priv->y_min) * y_ratio;
 
         cairo_move_to (cr,
-                       self->priv->plot_area_offset_x0,
-                       self->priv->plot_area_offset_y0 - y);
+                       self->priv->plot_area_offset_x0 - x3,
+                       self->priv->plot_area_offset_y0 - y3);
 
         seconds = 0;
         j = current_step_index;
         do {
-            gdouble x;
+
 
             seconds++;
             if (j == 0)
@@ -424,20 +430,22 @@ graph_draw (GtkWidget *widget,
                 continue;
 
             /* Convert the previous (seconds,value) to the corresponding amount of pixels */
-            x = seconds * x_ratio;
-            y = (self->priv->series[i].data[j] - self->priv->y_min) * y_ratio;
+            x3 = seconds * x_ratio;
+            y3 = (self->priv->series[i].data[j] - self->priv->y_min) * y_ratio;
 
-            cairo_line_to (cr,
-                           self->priv->plot_area_offset_x0 + x,
-                           self->priv->plot_area_offset_y0 - y);
+            /* Additional control points for the bezier spline */
+            x1 = ((gdouble)seconds - 1.0f + 0.5f) * x_ratio;
+            y1 = (self->priv->series[i].data[j == (NUM_POINTS - 1) ? 0 : j + 1] - self->priv->y_min) * y_ratio;
+            x2 = ((gdouble)seconds - 0.5f) * x_ratio;
+            y2 = (self->priv->series[i].data[j] - self->priv->y_min) * y_ratio;
 
-            /* cairo_curve_to (cr, */
-            /*                 self->priv->plot_area_offset_x0 + ((seconds - 0.5f) * (self->priv->plot_area_width / NUM_POINTS)), */
-            /*                 (1.0f - self->priv->series[i].data[j > 0 ? j - 1 : NUM_POINTS - 1]) * self->priv->plot_area_height + 3.5f, */
-            /*                 self->priv->plot_area_offset_x0 + ((seconds - 0.5f) * (self->priv->plot_area_width / NUM_POINTS)), */
-            /*                 (1.0f - self->priv->series[i].data[j]) * self->priv->plot_area_height + 3.5f, */
-            /*                 self->priv->plot_area_offset_x0 + (seconds * (self->priv->plot_area_width / NUM_POINTS)), */
-            /*                 (1.0f - self->priv->series[i].data[j]) * self->priv->plot_area_height + 3.5f); */
+            cairo_curve_to (cr,
+                            self->priv->plot_area_offset_x0 + x1,
+                            self->priv->plot_area_offset_y0 - y1,
+                            self->priv->plot_area_offset_x0 + x2,
+                            self->priv->plot_area_offset_y0 - y2,
+                            self->priv->plot_area_offset_x0 + x3,
+                            self->priv->plot_area_offset_y0 - y3);
 
         } while (j != self->priv->step_index);
 
