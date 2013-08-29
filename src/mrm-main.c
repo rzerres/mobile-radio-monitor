@@ -8,56 +8,41 @@
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details:
+ * GNU General Public License for more details.
  *
  * Copyright (C) 2013 Aleksander Morgado <aleksander@gnu.org>
  */
 
+#include <config.h>
+#include <locale.h>
 #include <gtk/gtk.h>
 
-#include "mrm-graph.h"
+#include "mrm-app.h"
 
-static GtkWidget *window;
-static GtkWidget *graph;
-
-static gboolean
-update (gpointer unused)
+static void
+activate_cb (GtkApplication *app)
 {
-    static gdouble value = -113.0;
-
-    mrm_graph_step_init (MRM_GRAPH (graph));
-    mrm_graph_step_set_value (MRM_GRAPH (graph), 0, value);
-    mrm_graph_step_finish (MRM_GRAPH (graph));
-
-    value += 1.0;
-    if (value > -49.0)
-        value = -113.0;
+    /* This is the primary instance */
+    mrm_app_start (MRM_APP (app));
 }
 
 gint
 main (gint argc, gchar **argv)
 {
-    gtk_init (&argc, &argv);
+    MrmApp *app;
+    gint status;
 
-    window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+    setlocale (LC_ALL, "");
 
-    graph = mrm_graph_new ();
-    g_object_set (graph,
-                  "y-max",          -49.0,
-                  "y-min",          -113.0,
-                  "y-n-separators", 4,
-                  "y-units",        "dBs",
-                  "n-series",       1,
-                  NULL);
-    gtk_widget_show (graph);
-    gtk_container_add (GTK_CONTAINER (window), graph);
-    gtk_widget_show (window);
+    app = mrm_app_new ();
+    g_signal_connect (app, "activate", G_CALLBACK (activate_cb), NULL);
 
-    mrm_graph_setup_series (MRM_GRAPH (graph), 0, "RSSI", 255, 0, 0);
+    /* Set it as the default application */
+    g_application_set_default (G_APPLICATION (app));
 
-    g_timeout_add_seconds (1, (GSourceFunc) update, NULL);
+    /* And run the GtkApplication */
+    status = g_application_run (G_APPLICATION (app), argc, argv);
+    g_object_unref (app);
 
-    gtk_main ();
-
-    return 0;
+    return status;
 }

@@ -18,5 +18,7 @@ stamp-h1
 config.*
 
 src/mobile-radio-monitor
+src/mrm-resources.h
+src/mrm-resources.c
 
 tests/test-graph

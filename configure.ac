@@ -6,7 +6,7 @@ AC_CONFIG_HEADERS(config.h)
 AC_CONFIG_SRCDIR(src/mrm-main.c)
 AC_CONFIG_MACRO_DIR([m4])
 
-AM_INIT_AUTOMAKE([1.11 -Wall foreign no-define tar-ustar no-dist-gzip dist-xz])
+AM_INIT_AUTOMAKE([1.11 -Wall foreign no-define tar-ustar no-dist-gzip dist-xz -Wno-portability])
 
 # Support silent build rules, requires at least automake-1.11. Disable
 # by either passing --disable-silent-rules to configure or passing V=1
@@ -36,6 +36,9 @@ AC_SUBST(GTK_LIBS)
 PKG_CHECK_MODULES(MM, mm-glib >= 1.0)
 AC_SUBST(MM_CFLAGS)
 AC_SUBST(MM_LIBS)
+
+AC_PATH_PROG(GLIB_COMPILE_RESOURCES, glib-compile-resources)
+AC_SUBST(GLIB_COMPILE_RESOURCES)
 
 AC_CONFIG_FILES([
 Makefile
