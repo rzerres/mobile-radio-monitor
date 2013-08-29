@@ -7,6 +7,7 @@ bin_PROGRAMS = mobile-radio-monitor
 mobile_radio_monitor_SOURCES = \
 	mrm-resources.h mrm-resources.c \
 	mrm-graph.h mrm-graph.c \
+	mrm-window.h mrm-window.c \
 	mrm-app.h mrm-app.c \
 	mrm-main.c
 

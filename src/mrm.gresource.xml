@@ -2,5 +2,6 @@
 <gresources>
   <gresource prefix="/es/aleksander/mrm">
     <file preprocess="xml-stripblanks">mrm-menu.ui</file>
+    <file preprocess="xml-stripblanks">mrm-window.ui</file>
   </gresource>
 </gresources>

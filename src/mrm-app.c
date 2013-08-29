@@ -16,6 +16,7 @@
 #include <config.h>
 
 #include "mrm-app.h"
+#include "mrm-window.h"
 
 G_DEFINE_TYPE (MrmApp, mrm_app, GTK_TYPE_APPLICATION)
 
@@ -41,13 +42,14 @@ peek_main_window (MrmApp *self)
 void
 mrm_app_start (MrmApp *self)
 {
-    GtkWidget *main_window;
+    GtkWidget *window;
 
     g_assert (peek_main_window (self) == NULL);
 
-    main_window = gtk_application_window_new (GTK_APPLICATION (self));
-    gtk_application_add_window (GTK_APPLICATION (self), GTK_WINDOW (main_window));
-    gtk_widget_show_all (main_window);
+    window = mrm_window_new (self);
+    gtk_application_add_window (GTK_APPLICATION (self), GTK_WINDOW (window));
+    gtk_window_maximize (GTK_WINDOW (window));
+    gtk_widget_show_all (window);
 }
 
 void
