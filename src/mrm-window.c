@@ -15,11 +15,12 @@
 
 #include <config.h>
 #include <gtk/gtk.h>
+#include <libqmi-glib.h>
 
 #include "mrm-window.h"
 
 struct _MrmWindowPrivate {
-    gpointer dummy;
+    QmiDevice *device;
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE (MrmWindow, mrm_window, GTK_TYPE_APPLICATION_WINDOW)
@@ -56,11 +57,52 @@ error_dialog (const gchar *primary_text,
 
 /******************************************************************************/
 
+static void
+device_open_ready (QmiDevice *device,
+                   GAsyncResult *res,
+                   MrmWindow *self)
+{
+    GError *error = NULL;
+
+    if (!qmi_device_open_finish (device, res, &error)) {
+        error_dialog ("Cannot open QMI device file", error->message, GTK_WINDOW (self));
+        g_error_free (error);
+        return;
+    }
+
+    g_debug ("QMI device at '%s' correctly opened", qmi_device_get_path_display (device));
+}
+
+static void
+device_new_ready (GObject *source,
+                  GAsyncResult *res,
+                  MrmWindow *self)
+{
+    GError *error = NULL;
+
+    self->priv->device = qmi_device_new_finish (res, &error);
+    if (!self->priv->device) {
+        error_dialog ("Cannot access QMI device file", error->message, GTK_WINDOW (self));
+        g_error_free (error);
+        return;
+    }
+
+    qmi_device_open (self->priv->device,
+                     QMI_DEVICE_OPEN_FLAGS_PROXY,
+                     5,
+                     NULL,
+                     (GAsyncReadyCallback) device_open_ready,
+                     self);
+}
+
 void
 mrm_window_open (MrmWindow *self,
                  GFile *device_file)
 {
-    error_dialog ("File doesn't exist", NULL, GTK_WINDOW (self));
+    qmi_device_new (device_file,
+                    NULL,
+                    (GAsyncReadyCallback) device_new_ready,
+                    self);
 }
 
 /******************************************************************************/
@@ -86,10 +128,22 @@ mrm_window_init (MrmWindow *self)
 }
 
 static void
+dispose (GObject *object)
+{
+    MrmWindow *self = MRM_WINDOW (object);
+
+    g_clear_object (&self->priv->device);
+
+    G_OBJECT_CLASS (mrm_window_parent_class)->dispose (object);
+}
+
+static void
 mrm_window_class_init (MrmWindowClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS (klass);
     GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
+
+    object_class->dispose = dispose;
 
     /* Bind class to template */
     gtk_widget_class_set_template_from_resource  (widget_class, "/es/aleksander/mrm/mrm-window.ui");
