@@ -1,6 +1,6 @@
 
 ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}
 
-SUBDIRS = src
+SUBDIRS = src tests
 
 EXTRA_DIST = autogen.sh

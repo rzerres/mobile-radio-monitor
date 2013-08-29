@@ -18,3 +18,5 @@ stamp-h1
 config.*
 
 src/mobile-radio-monitor
+
+tests/test-graph
