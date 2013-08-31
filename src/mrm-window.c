@@ -26,8 +26,10 @@
 struct _MrmWindowPrivate {
     GtkWidget *device_list;
     GtkWidget *device_list_label;
+    GtkWidget *device_list_spinner_box;
 
     guint initial_scan_done_id;
+    guint device_detection_id;
     guint device_added_id;
     guint device_removed_id;
 };
@@ -176,6 +178,17 @@ initial_scan_done_cb (MrmApp *application,
 }
 
 static void
+device_detection_cb (MrmApp *application,
+                     gboolean detection,
+                     MrmWindow *self)
+{
+    if (detection)
+        gtk_widget_show (self->priv->device_list_spinner_box);
+    else
+        gtk_widget_hide (self->priv->device_list_spinner_box);
+}
+
+static void
 setup_device_list_updates (MrmWindow *self)
 {
     MrmApp *application = NULL;
@@ -183,6 +196,12 @@ setup_device_list_updates (MrmWindow *self)
     g_object_get (self,
                   "application", &application,
                   NULL);
+
+    self->priv->device_detection_id =
+        g_signal_connect (application,
+                          "device-detection",
+                          G_CALLBACK (device_detection_cb),
+                          self);
 
     if (mrm_app_is_initial_scan_done (application))
         populate_device_list (self);
@@ -236,6 +255,11 @@ dispose (GObject *object)
                                          self->priv->initial_scan_done_id);
             self->priv->initial_scan_done_id = 0;
         }
+        if (self->priv->device_detection_id) {
+            g_signal_handler_disconnect (application,
+                                         self->priv->device_detection_id);
+            self->priv->device_detection_id = 0;
+        }
         if (self->priv->device_added_id) {
             g_signal_handler_disconnect (application,
                                          self->priv->device_added_id);
@@ -264,4 +288,5 @@ mrm_window_class_init (MrmWindowClass *klass)
     gtk_widget_class_set_template_from_resource  (widget_class, "/es/aleksander/mrm/mrm-window.ui");
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, device_list);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, device_list_label);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, device_list_spinner_box);
 }

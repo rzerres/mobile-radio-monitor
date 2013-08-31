@@ -23,6 +23,7 @@
 G_DEFINE_TYPE (MrmApp, mrm_app, GTK_TYPE_APPLICATION)
 
 enum {
+    SIGNAL_DEVICE_DETECTION,
     SIGNAL_INITIAL_SCAN_DONE,
     SIGNAL_DEVICE_ADDED,
     SIGNAL_DEVICE_REMOVED,
@@ -107,6 +108,9 @@ pending_device_info_remove (MrmApp *self,
     g_object_unref (info->cancellable);
     g_free (info->device_name);
     g_slice_free (PendingDeviceInfo, info);
+
+    if (!self->priv->pending_devices)
+        g_signal_emit (self, signals[SIGNAL_DEVICE_DETECTION], 0, FALSE);
 }
 
 static void
@@ -120,6 +124,7 @@ pending_device_info_add (MrmApp *self,
     info->device_name = g_strdup (device_name);
     info->cancellable = g_object_ref (cancellable);
 
+    g_signal_emit (self, signals[SIGNAL_DEVICE_DETECTION], 0, TRUE);
     self->priv->pending_devices = g_list_append (self->priv->pending_devices, info);
 }
 
@@ -539,6 +544,18 @@ mrm_app_class_init (MrmAppClass *klass)
     application_class->startup = startup;
     application_class->activate = activate;
     application_class->open = open;
+
+    signals[SIGNAL_DEVICE_DETECTION] =
+        g_signal_new ("device-detection",
+                      G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (klass)),
+                      G_SIGNAL_RUN_LAST,
+                      0,
+                      NULL,
+                      NULL,
+                      NULL,
+                      G_TYPE_NONE,
+                      1,
+                      G_TYPE_BOOLEAN);
 
     signals[SIGNAL_DEVICE_ADDED] =
         g_signal_new ("device-added",
