@@ -16,11 +16,13 @@ mobile_radio_monitor_SOURCES = \
 mobile_radio_monitor_CPPFLAGS = \
 	$(QMI_CFLAGS) \
 	$(GTK_CFLAGS) \
+	$(GUDEV_CFLAGS) \
 	-I$(top_srcdir)
 
 mobile_radio_monitor_LDADD = \
 	$(QMI_LIBS) \
 	$(GTK_LIBS) \
+	$(GUDEV_LIBS) \
 	-lm
 
 ################################################################################
