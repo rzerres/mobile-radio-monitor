@@ -42,9 +42,10 @@ struct _MrmAppClass {
 
 GType mrm_app_get_type (void) G_GNUC_CONST;
 
-MrmApp *mrm_app_new   (void);
-void    mrm_app_start (MrmApp *self);
-void    mrm_app_quit  (MrmApp *self);
+MrmApp   *mrm_app_new                  (void);
+void      mrm_app_quit                 (MrmApp *self);
+gboolean  mrm_app_is_initial_scan_done (MrmApp *self);
+GList    *mrm_app_peek_devices         (MrmApp *self);
 
 G_END_DECLS
 

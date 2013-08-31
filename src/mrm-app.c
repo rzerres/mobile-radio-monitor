@@ -22,10 +22,20 @@
 
 G_DEFINE_TYPE (MrmApp, mrm_app, GTK_TYPE_APPLICATION)
 
+enum {
+    SIGNAL_INITIAL_SCAN_DONE,
+    SIGNAL_DEVICE_ADDED,
+    SIGNAL_DEVICE_REMOVED,
+    SIGNAL_LAST
+};
+
+static guint signals [SIGNAL_LAST] = { 0 };
+
 struct _MrmAppPrivate {
     /* The UDev client */
     GUdevClient *udev_client;
     guint initial_scan_id;
+    gboolean initial_scan_done;
 
     /* List of devices being added */
     GList *pending_devices;
@@ -33,6 +43,24 @@ struct _MrmAppPrivate {
     /* List of MrmDevices */
     GList *devices;
 };
+
+/******************************************************************************/
+
+gboolean
+mrm_app_is_initial_scan_done (MrmApp *self)
+{
+    g_return_val_if_fail (MRM_IS_APP (self), FALSE);
+
+    return self->priv->initial_scan_done;
+}
+
+GList *
+mrm_app_peek_devices (MrmApp *self)
+{
+    g_return_val_if_fail (MRM_IS_APP (self), NULL);
+
+    return self->priv->devices;
+}
 
 /******************************************************************************/
 
@@ -131,10 +159,18 @@ device_new_ready (GObject *source,
         g_object_unref (device);
     } else {
         /* Add device */
+        g_signal_emit (ctx->self, signals[SIGNAL_DEVICE_ADDED], 0, device);
         ctx->self->priv->devices = g_list_append (ctx->self->priv->devices, device);
     }
 
     pending_device_info_remove (ctx->self, ctx->device_name);
+
+    /* If this was the last pending device, we're done */
+    if (!ctx->self->priv->initial_scan_done && !ctx->self->priv->pending_devices) {
+        ctx->self->priv->initial_scan_done = TRUE;
+        g_signal_emit (ctx->self, signals[SIGNAL_INITIAL_SCAN_DONE], 0);
+    }
+
     port_added_context_free (ctx);
 }
 
@@ -217,8 +253,9 @@ port_removed (MrmApp *self,
 
         if (g_str_equal (mrm_device_get_name (device), g_udev_device_get_name (udev_device))) {
             g_debug ("QMI device file unavailable: /dev/%s", g_udev_device_get_name (udev_device));
-            g_object_unref (device);
             self->priv->devices = g_list_delete_link (self->priv->devices, l);
+            g_signal_emit (self, signals[SIGNAL_DEVICE_REMOVED], 0, device);
+            g_object_unref (device);
             return;
         }
     }
@@ -272,6 +309,12 @@ initial_scan_cb (MrmApp *self)
         g_object_unref (G_OBJECT (iter->data));
     }
     g_list_free (devices);
+
+    /* If no pending devices, we're done */
+    if (!self->priv->initial_scan_done && !self->priv->pending_devices) {
+        self->priv->initial_scan_done = TRUE;
+        g_signal_emit (self, signals[SIGNAL_INITIAL_SCAN_DONE], 0);
+    }
 
     return FALSE;
 }
@@ -366,39 +409,39 @@ open (GApplication *application,
       gint n_files,
       const gchar *hint)
 {
-    GtkWidget *window;
-    gchar *path;
-    gchar *display;
+    /* GtkWidget *window; */
+    /* gchar *path; */
+    /* gchar *display; */
 
-    /* No files to open, just return */
-    if (n_files <= 0)
-        return;
+    /* /\* No files to open, just return *\/ */
+    /* if (n_files <= 0) */
+    /*     return; */
 
-    /* More than one file; warn */
-    if (n_files > 1) {
-        guint i;
+    /* /\* More than one file; warn *\/ */
+    /* if (n_files > 1) { */
+    /*     guint i; */
 
-        g_warning ("Too many device files given (%d); only one expected.", n_files);
-        for (i = 1; i < n_files; i++) {
-            path = g_file_get_path (files[i]);
-            display = g_filename_display_name (path);
-            g_warning ("  Ignoring device file '%s'...", display);
-            g_free (path);
-            g_free (display);
-        }
-    }
+    /*     g_warning ("Too many device files given (%d); only one expected.", n_files); */
+    /*     for (i = 1; i < n_files; i++) { */
+    /*         path = g_file_get_path (files[i]); */
+    /*         display = g_filename_display_name (path); */
+    /*         g_warning ("  Ignoring device file '%s'...", display); */
+    /*         g_free (path); */
+    /*         g_free (display); */
+    /*     } */
+    /* } */
 
-    /* Exactly one file, open it */
-    path = g_file_get_path (files[0]);
-    display = g_filename_display_name (path);
-    g_debug ("Opening device file '%s'...", display);
-    g_free (path);
-    g_free (display);
+    /* /\* Exactly one file, open it *\/ */
+    /* path = g_file_get_path (files[0]); */
+    /* display = g_filename_display_name (path); */
+    /* g_debug ("Opening device file '%s'...", display); */
+    /* g_free (path); */
+    /* g_free (display); */
 
-    /* Peek window and open device file */
-    ensure_main_window (MRM_APP (application));
-    window = peek_main_window (MRM_APP (application));
-    mrm_window_open (MRM_WINDOW (window), files[0]);
+    /* /\* Peek window and open device file *\/ */
+    /* ensure_main_window (MRM_APP (application)); */
+    /* window = peek_main_window (MRM_APP (application)); */
+    /* mrm_window_open (MRM_WINDOW (window), files[0]); */
 }
 
 /******************************************************************************/
@@ -496,4 +539,39 @@ mrm_app_class_init (MrmAppClass *klass)
     application_class->startup = startup;
     application_class->activate = activate;
     application_class->open = open;
+
+    signals[SIGNAL_DEVICE_ADDED] =
+        g_signal_new ("device-added",
+                      G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (klass)),
+                      G_SIGNAL_RUN_LAST,
+                      0,
+                      NULL,
+                      NULL,
+                      NULL,
+                      G_TYPE_NONE,
+                      1,
+                      MRM_TYPE_DEVICE);
+
+    signals[SIGNAL_DEVICE_REMOVED] =
+        g_signal_new ("device-removed",
+                      G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (klass)),
+                      G_SIGNAL_RUN_LAST,
+                      0,
+                      NULL,
+                      NULL,
+                      NULL,
+                      G_TYPE_NONE,
+                      1,
+                      MRM_TYPE_DEVICE);
+
+    signals[SIGNAL_INITIAL_SCAN_DONE] =
+        g_signal_new ("initial-scan-done",
+                      G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (klass)),
+                      G_SIGNAL_RUN_LAST,
+                      0,
+                      NULL,
+                      NULL,
+                      NULL,
+                      G_TYPE_NONE,
+                      0);
 }
