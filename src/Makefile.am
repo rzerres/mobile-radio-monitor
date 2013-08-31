@@ -8,6 +8,7 @@ mobile_radio_monitor_SOURCES = \
 	mrm-resources.h mrm-resources.c \
 	mrm-error.h mrm-error-types.h mrm-error-types.c \
 	mrm-graph.h mrm-graph.c \
+	mrm-device.h mrm-device.c \
 	mrm-window.h mrm-window.c \
 	mrm-app.h mrm-app.c \
 	mrm-main.c
