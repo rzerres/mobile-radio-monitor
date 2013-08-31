@@ -74,26 +74,31 @@ device_added_cb (MrmApp *application,
                  MrmWindow *self)
 {
     GtkWidget *button;
-    gchar *button_label;
+    GtkWidget *button_label;
+    gchar *button_label_markup;
 
-    button_label = g_strdup_printf ("[%s] %s (%s)",
-                                    mrm_device_get_name (device),
-                                    mrm_device_get_model (device),
-                                    mrm_device_get_manufacturer (device));
-    button = gtk_button_new_with_label (button_label);
-    g_free (button_label);
+    button_label_markup = g_strdup_printf ("[%s]\n\t<span weight=\"bold\">%s</span>\n\t<span style=\"italic\">%s</span>",
+                                           mrm_device_get_name (device),
+                                           mrm_device_get_model (device),
+                                           mrm_device_get_manufacturer (device));
+    button_label = gtk_label_new (NULL);
+    gtk_label_set_markup (GTK_LABEL (button_label), button_label_markup);
+    g_free (button_label_markup);
+    button = gtk_button_new ();
+    gtk_container_add (GTK_CONTAINER (button), button_label);
+    gtk_button_set_alignment (GTK_BUTTON (button), 0.0, 0.5);
 
     g_object_set_data_full (G_OBJECT (button),
                             DEVICE_TAG,
                             g_object_ref (device),
                             g_object_unref);
 
-    gtk_widget_show (button);
+    gtk_widget_show_all (button);
     gtk_box_pack_end (GTK_BOX (self->priv->device_list),
                       button,
-                      FALSE,
-                      FALSE,
-                      0);
+                      FALSE, /* expand */
+                      FALSE, /* fill */
+                      4); /* padding */
 
     gtk_label_set_text (GTK_LABEL (self->priv->device_list_label),
                         LABEL_AVAILABLE);
