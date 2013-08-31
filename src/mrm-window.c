@@ -18,9 +18,18 @@
 #include <libqmi-glib.h>
 
 #include "mrm-window.h"
+#include "mrm-device.h"
+
+#define LABEL_NONE_AVAILABLE "No available QMI devices"
+#define LABEL_AVAILABLE      "Available QMI devices:"
 
 struct _MrmWindowPrivate {
-    QmiDevice *device;
+    GtkWidget *device_list;
+    GtkWidget *device_list_label;
+
+    guint initial_scan_done_id;
+    guint device_added_id;
+    guint device_removed_id;
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE (MrmWindow, mrm_window, GTK_TYPE_APPLICATION_WINDOW)
@@ -57,52 +66,129 @@ error_dialog (const gchar *primary_text,
 
 /******************************************************************************/
 
+#define DEVICE_TAG "device-tag"
+
 static void
-device_open_ready (QmiDevice *device,
-                   GAsyncResult *res,
+device_added_cb (MrmApp *application,
+                 MrmDevice *device,
+                 MrmWindow *self)
+{
+    GtkWidget *button;
+    gchar *button_label;
+
+    button_label = g_strdup_printf ("[%s] %s (%s)",
+                                    mrm_device_get_name (device),
+                                    mrm_device_get_model (device),
+                                    mrm_device_get_manufacturer (device));
+    button = gtk_button_new_with_label (button_label);
+    g_free (button_label);
+
+    g_object_set_data_full (G_OBJECT (button),
+                            DEVICE_TAG,
+                            g_object_ref (device),
+                            g_object_unref);
+
+    gtk_widget_show (button);
+    gtk_box_pack_end (GTK_BOX (self->priv->device_list),
+                      button,
+                      FALSE,
+                      FALSE,
+                      0);
+
+    gtk_label_set_text (GTK_LABEL (self->priv->device_list_label),
+                        LABEL_AVAILABLE);
+}
+
+static void
+device_removed_cb (MrmApp *application,
+                   MrmDevice *device,
                    MrmWindow *self)
 {
-    GError *error = NULL;
+    GList *children, *l;
+    guint valid = 0;
+    gboolean removed = FALSE;
 
-    if (!qmi_device_open_finish (device, res, &error)) {
-        error_dialog ("Cannot open QMI device file", error->message, GTK_WINDOW (self));
-        g_error_free (error);
-        return;
+    children = gtk_container_get_children (GTK_CONTAINER (self->priv->device_list));
+    for (l = children; l; l = g_list_next (l)) {
+        gpointer ldevice;
+
+        ldevice = g_object_get_data (G_OBJECT (l->data), DEVICE_TAG);
+        if (!ldevice)
+            continue;
+
+        if (device == ldevice ||
+            g_str_equal (mrm_device_get_name (MRM_DEVICE (ldevice)),
+                         mrm_device_get_name (device))) {
+            gtk_container_remove (GTK_CONTAINER (self->priv->device_list), GTK_WIDGET (l->data));
+            removed = TRUE;
+        } else
+            valid++;
     }
 
-    g_debug ("QMI device at '%s' correctly opened", qmi_device_get_path_display (device));
+    /* If this was the last item; change label */
+    if (removed && !valid)
+        gtk_label_set_text (GTK_LABEL (self->priv->device_list_label),
+                            LABEL_NONE_AVAILABLE);
+
+    g_list_free (children);
 }
 
 static void
-device_new_ready (GObject *source,
-                  GAsyncResult *res,
-                  MrmWindow *self)
+populate_device_list (MrmWindow *self)
 {
-    GError *error = NULL;
+    MrmApp *application = NULL;
+    GList *l;
 
-    self->priv->device = qmi_device_new_finish (res, &error);
-    if (!self->priv->device) {
-        error_dialog ("Cannot access QMI device file", error->message, GTK_WINDOW (self));
-        g_error_free (error);
-        return;
-    }
+    g_object_get (self,
+                  "application", &application,
+                  NULL);
 
-    qmi_device_open (self->priv->device,
-                     QMI_DEVICE_OPEN_FLAGS_PROXY,
-                     5,
-                     NULL,
-                     (GAsyncReadyCallback) device_open_ready,
-                     self);
+    self->priv->device_added_id =
+        g_signal_connect (application,
+                          "device-added",
+                          G_CALLBACK (device_added_cb),
+                          self);
+    self->priv->device_removed_id =
+        g_signal_connect (application,
+                          "device-removed",
+                          G_CALLBACK (device_removed_cb),
+                          self);
+
+    gtk_label_set_text (GTK_LABEL (self->priv->device_list_label),
+                        LABEL_NONE_AVAILABLE);
+
+    for (l = mrm_app_peek_devices (application); l; l = g_list_next (l))
+        device_added_cb (application, MRM_DEVICE (l->data), self);
+
+    g_object_unref (application);
 }
 
-void
-mrm_window_open (MrmWindow *self,
-                 GFile *device_file)
+static void
+initial_scan_done_cb (MrmApp *application,
+                      MrmWindow *self)
 {
-    qmi_device_new (device_file,
-                    NULL,
-                    (GAsyncReadyCallback) device_new_ready,
-                    self);
+    populate_device_list (self);
+}
+
+static void
+setup_device_list_updates (MrmWindow *self)
+{
+    MrmApp *application = NULL;
+
+    g_object_get (self,
+                  "application", &application,
+                  NULL);
+
+    if (mrm_app_is_initial_scan_done (application))
+        populate_device_list (self);
+    else
+        self->priv->initial_scan_done_id =
+            g_signal_connect (application,
+                              "initial-scan-done",
+                              G_CALLBACK (initial_scan_done_cb),
+                              self);
+
+    g_object_unref (application);
 }
 
 /******************************************************************************/
@@ -115,6 +201,8 @@ mrm_window_new (MrmApp *application)
     self = g_object_new (MRM_TYPE_WINDOW,
                          "application", application,
                          NULL);
+
+    setup_device_list_updates (self);
 
     return GTK_WIDGET (self);
 }
@@ -131,8 +219,30 @@ static void
 dispose (GObject *object)
 {
     MrmWindow *self = MRM_WINDOW (object);
+    MrmApp *application = NULL;
 
-    g_clear_object (&self->priv->device);
+    /* Remove signal handlers */
+    g_object_get (self,
+                  "application", &application,
+                  NULL);
+    if (application) {
+        if (self->priv->initial_scan_done_id) {
+            g_signal_handler_disconnect (application,
+                                         self->priv->initial_scan_done_id);
+            self->priv->initial_scan_done_id = 0;
+        }
+        if (self->priv->device_added_id) {
+            g_signal_handler_disconnect (application,
+                                         self->priv->device_added_id);
+            self->priv->device_added_id = 0;
+        }
+        if (self->priv->device_removed_id) {
+            g_signal_handler_disconnect (application,
+                                         self->priv->device_removed_id);
+            self->priv->device_removed_id = 0;
+        }
+        g_object_unref (application);
+    }
 
     G_OBJECT_CLASS (mrm_window_parent_class)->dispose (object);
 }
@@ -147,4 +257,6 @@ mrm_window_class_init (MrmWindowClass *klass)
 
     /* Bind class to template */
     gtk_widget_class_set_template_from_resource  (widget_class, "/es/aleksander/mrm/mrm-window.ui");
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, device_list);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, device_list_label);
 }
