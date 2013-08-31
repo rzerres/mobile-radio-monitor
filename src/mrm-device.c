@@ -311,7 +311,8 @@ qmi_device_new_ready (GObject *source,
              qmi_device_get_path_display (ctx->self->priv->qmi_device));
 
     qmi_device_open (ctx->self->priv->qmi_device,
-                     QMI_DEVICE_OPEN_FLAGS_PROXY,
+                     (QMI_DEVICE_OPEN_FLAGS_PROXY |
+                      QMI_DEVICE_OPEN_FLAGS_VERSION_INFO),
                      5,
                      ctx->cancellable,
                      (GAsyncReadyCallback) qmi_device_open_ready,
