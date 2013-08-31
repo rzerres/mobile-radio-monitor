@@ -37,11 +37,15 @@ PKG_CHECK_MODULES(QMI, qmi-glib >= 1.4)
 AC_SUBST(QMI_CFLAGS)
 AC_SUBST(QMI_LIBS)
 
+GLIB_MKENUMS=`$PKG_CONFIG --variable=glib_mkenums glib-2.0`
+AC_SUBST(GLIB_MKENUMS)
+
 AC_PATH_PROG(GLIB_COMPILE_RESOURCES, glib-compile-resources)
 AC_SUBST(GLIB_COMPILE_RESOURCES)
 
 AC_CONFIG_FILES([
 Makefile
+build-aux/Makefile
 src/Makefile
 tests/Makefile
 ])

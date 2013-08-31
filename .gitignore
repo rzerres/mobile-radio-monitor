@@ -20,5 +20,7 @@ config.*
 src/mobile-radio-monitor
 src/mrm-resources.h
 src/mrm-resources.c
+src/mrm-error-types.c
+src/mrm-error-types.h
 
 tests/test-graph
