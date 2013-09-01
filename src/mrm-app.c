@@ -455,7 +455,6 @@ static void
 startup (GApplication *application)
 {
     MrmApp *self = MRM_APP (application);
-    GtkBuilder *builder;
     GError *error = NULL;
 
     /* Chain up parent's startup */
@@ -465,22 +464,6 @@ startup (GApplication *application)
     g_action_map_add_action_entries (G_ACTION_MAP (self),
                                      app_entries, G_N_ELEMENTS (app_entries),
                                      self);
-
-    /* Setup menu */
-    builder = gtk_builder_new ();
-    if (!gtk_builder_add_from_resource (builder,
-                                        "/es/aleksander/mrm/mrm-menu.ui",
-                                        &error)) {
-        g_warning ("loading menu builder file: %s", error->message);
-        g_error_free (error);
-    } else {
-        GMenuModel *app_menu;
-
-        app_menu = G_MENU_MODEL (gtk_builder_get_object (builder, "app-menu"));
-        gtk_application_set_app_menu (GTK_APPLICATION (application), app_menu);
-    }
-
-    g_object_unref (builder);
 }
 
 /******************************************************************************/
