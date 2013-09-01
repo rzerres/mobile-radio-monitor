@@ -15,6 +15,39 @@
         <property name="can_focus">False</property>
         <property name="vexpand">False</property>
         <property name="show-close-button">True</property>
+        <child>
+          <object class="GtkBox" id="box">
+            <property name="visible">True</property>
+            <property name="valign">center</property>
+            <property name="can_focus">False</property>
+            <style>
+              <class name="linked"/>
+            </style>
+            <child>
+              <object class="GtkButton" id="back_button">
+                <property name="visible">True</property>
+                <property name="sensitive">False</property>
+                <property name="valign">center</property>
+                <property name="can_focus">False</property>
+                <property name="tooltip_text" translatable="yes">Back</property>
+                <property name="action_name">win.go-back</property>
+                <style>
+                  <class name="image-button"/>
+                </style>
+                <child>
+                  <object class="GtkImage" id="back_button_image">
+                    <property name="visible">True</property>
+                    <property name="icon_size">1</property>
+                    <property name="icon_name">go-previous-symbolic</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="pack_type">start</property>
+          </packing>
+        </child>
       </object>
     </child>
     <child>
@@ -23,7 +56,7 @@
         <property name="can_focus">True</property>
         <property name="show_tabs">False</property>
         <child>
-          <object class="GtkBox" id="device_list">
+          <object class="GtkBox" id="device_list_box">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="halign">center</property>
@@ -88,19 +121,33 @@
           </object>
         </child>
         <child type="tab">
-          <placeholder/>
+          <object class="GtkLabel" id="device-list-tab">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="label" translatable="yes">Device List</property>
+          </object>
+          <packing>
+            <property name="position">0</property>
+            <property name="tab_fill">False</property>
+          </packing>
         </child>
         <child>
-          <placeholder/>
+          <object class="GtkBox" id="graph_box">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="orientation">vertical</property>
+          </object>
         </child>
         <child type="tab">
-          <placeholder/>
-        </child>
-        <child>
-          <placeholder/>
-        </child>
-        <child type="tab">
-          <placeholder/>
+          <object class="GtkLabel" id="signal-tab">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="label" translatable="yes">Signal information</property>
+          </object>
+          <packing>
+            <property name="position">1</property>
+            <property name="tab_fill">False</property>
+          </packing>
         </child>
       </object>
     </child>

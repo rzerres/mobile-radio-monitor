@@ -23,8 +23,17 @@
 #define LABEL_NONE_AVAILABLE "No available QMI devices"
 #define LABEL_AVAILABLE      "Available QMI devices:"
 
+#define NOTEBOOK_TAB_DEVICE_LIST 0
+#define NOTEBOOK_TAB_SIGNAL_INFO 1
+
 struct _MrmWindowPrivate {
-    GtkWidget *device_list;
+    GtkWidget *notebook;
+
+    /* Header bar */
+    GtkWidget *back_button;
+
+    /* Device list tab */
+    GtkWidget *device_list_box;
     GtkWidget *device_list_label;
     GtkWidget *device_list_spinner_box;
 
@@ -68,7 +77,42 @@ error_dialog (const gchar *primary_text,
 
 /******************************************************************************/
 
+static void
+select_device_list_tab (MrmWindow *self)
+{
+    gtk_widget_set_sensitive (self->priv->back_button, FALSE);
+    gtk_notebook_set_current_page (GTK_NOTEBOOK (self->priv->notebook), NOTEBOOK_TAB_DEVICE_LIST);
+}
+
+static void
+select_signal_info_tab (MrmWindow *self)
+{
+    gtk_widget_set_sensitive (self->priv->back_button, TRUE);
+    gtk_notebook_set_current_page (GTK_NOTEBOOK (self->priv->notebook), NOTEBOOK_TAB_SIGNAL_INFO);
+}
+
+/******************************************************************************/
+
+void
+mrm_window_open_device (MrmWindow *self,
+                        MrmDevice *device)
+{
+    select_signal_info_tab (self);
+
+    /* TODO: more */
+}
+
+/******************************************************************************/
+
 #define DEVICE_TAG "device-tag"
+
+static void
+device_button_clicked (GtkButton *button,
+                       MrmWindow *self)
+{
+    mrm_window_open_device (self,
+                            MRM_DEVICE (g_object_get_data (G_OBJECT (button), DEVICE_TAG)));
+}
 
 static void
 device_added_cb (MrmApp *application,
@@ -95,8 +139,13 @@ device_added_cb (MrmApp *application,
                             g_object_ref (device),
                             g_object_unref);
 
+    g_signal_connect (button,
+                      "clicked",
+                      G_CALLBACK (device_button_clicked),
+                      self);
+
     gtk_widget_show_all (button);
-    gtk_box_pack_end (GTK_BOX (self->priv->device_list),
+    gtk_box_pack_end (GTK_BOX (self->priv->device_list_box),
                       button,
                       FALSE, /* expand */
                       FALSE, /* fill */
@@ -115,7 +164,7 @@ device_removed_cb (MrmApp *application,
     guint valid = 0;
     gboolean removed = FALSE;
 
-    children = gtk_container_get_children (GTK_CONTAINER (self->priv->device_list));
+    children = gtk_container_get_children (GTK_CONTAINER (self->priv->device_list_box));
     for (l = children; l; l = g_list_next (l)) {
         gpointer ldevice;
 
@@ -126,7 +175,7 @@ device_removed_cb (MrmApp *application,
         if (device == ldevice ||
             g_str_equal (mrm_device_get_name (MRM_DEVICE (ldevice)),
                          mrm_device_get_name (device))) {
-            gtk_container_remove (GTK_CONTAINER (self->priv->device_list), GTK_WIDGET (l->data));
+            gtk_container_remove (GTK_CONTAINER (self->priv->device_list_box), GTK_WIDGET (l->data));
             removed = TRUE;
         } else
             valid++;
@@ -217,6 +266,15 @@ setup_device_list_updates (MrmWindow *self)
 
 /******************************************************************************/
 
+static void
+back_button_clicked (GtkButton *button,
+                     MrmWindow *self)
+{
+    select_device_list_tab (self);
+}
+
+/******************************************************************************/
+
 GtkWidget *
 mrm_window_new (MrmApp *application)
 {
@@ -237,6 +295,11 @@ mrm_window_init (MrmWindow *self)
     self->priv = mrm_window_get_instance_private (self);
 
     gtk_widget_init_template (GTK_WIDGET (self));
+
+    g_signal_connect (self->priv->back_button,
+                      "clicked",
+                      G_CALLBACK (back_button_clicked),
+                      self);
 }
 
 static void
@@ -286,7 +349,9 @@ mrm_window_class_init (MrmWindowClass *klass)
 
     /* Bind class to template */
     gtk_widget_class_set_template_from_resource  (widget_class, "/es/aleksander/mrm/mrm-window.ui");
-    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, device_list);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, notebook);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, back_button);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, device_list_box);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, device_list_label);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, device_list_spinner_box);
 }
