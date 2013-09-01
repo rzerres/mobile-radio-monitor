@@ -36,11 +36,93 @@ struct _MrmDevicePrivate {
     GFile *file;
     QmiDevice *qmi_device;
 
+    /* Device IDs */
     gchar *name;
     gchar *manufacturer;
     gchar *model;
     gchar *revision;
+
+    /* NAS client */
+    QmiClient *nas;
 };
+
+/*****************************************************************************/
+/* Start NAS service monitoring */
+
+typedef struct {
+    MrmDevice *self;
+    GSimpleAsyncResult *result;
+} StartNasContext;
+
+static void
+start_nas_context_complete_and_free (StartNasContext *ctx)
+{
+    g_simple_async_result_complete_in_idle (ctx->result);
+    g_object_unref (ctx->result);
+    g_object_unref (ctx->self);
+    g_slice_free (StartNasContext, ctx);
+}
+
+gboolean
+mrm_device_start_nas_finish (MrmDevice *self,
+                             GAsyncResult *res,
+                             GError **error)
+{
+    return !g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (res), error);
+}
+
+static void
+qmi_device_allocate_client_nas_ready (QmiDevice *device,
+                                      GAsyncResult *res,
+                                      StartNasContext *ctx)
+{
+    GError *error = NULL;
+    QmiMessageNasRegisterIndicationsInput *input;
+
+    ctx->self->priv->nas = qmi_device_allocate_client_finish (device, res, &error);
+    if (!ctx->self->priv->nas) {
+        g_prefix_error (&error, "Cannot allocate NAS client: ");
+        g_simple_async_result_take_error (ctx->result, error);
+        start_nas_context_complete_and_free (ctx);
+        return;
+    }
+
+    g_simple_async_result_set_op_res_gboolean (ctx->result, TRUE);
+    start_nas_context_complete_and_free (ctx);
+}
+
+void
+mrm_device_start_nas (MrmDevice *self,
+                      GAsyncReadyCallback callback,
+                      gpointer user_data)
+{
+    StartNasContext *ctx;
+
+    ctx = g_slice_new (StartNasContext);
+    ctx->self = g_object_ref (self);
+    ctx->result = g_simple_async_result_new (G_OBJECT (self),
+                                             callback,
+                                             user_data,
+                                             mrm_device_start_nas);
+
+    /* If already started, error */
+    if (self->priv->nas) {
+        g_simple_async_result_set_error (ctx->result,
+                                         MRM_CORE_ERROR,
+                                         MRM_CORE_ERROR_FAILED,
+                                         "NAS service already started");
+        start_nas_context_complete_and_free (ctx);
+        return;
+    }
+
+    qmi_device_allocate_client (self->priv->qmi_device,
+                                QMI_SERVICE_NAS,
+                                QMI_CID_NONE,
+                                5,
+                                NULL,
+                                (GAsyncReadyCallback) qmi_device_allocate_client_nas_ready,
+                                ctx);
+}
 
 /*****************************************************************************/
 
@@ -412,6 +494,17 @@ static void
 dispose (GObject *object)
 {
     MrmDevice *self = MRM_DEVICE (object);
+
+    if (self->priv->nas) {
+        qmi_device_release_client (self->priv->qmi_device,
+                                   self->priv->nas,
+                                   QMI_DEVICE_RELEASE_CLIENT_FLAGS_RELEASE_CID,
+                                   5,
+                                   NULL,
+                                   NULL,
+                                   NULL);
+        g_clear_object (&self->priv->nas);
+    }
 
     g_clear_object (&self->priv->file);
     if (self->priv->qmi_device)
