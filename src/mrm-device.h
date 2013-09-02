@@ -28,6 +28,14 @@ G_BEGIN_DECLS
 #define MRM_IS_DEVICE_CLASS(k)  (G_TYPE_CHECK_CLASS_TYPE ((k), MRM_TYPE_DEVICE))
 #define MRM_DEVICE_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS ((o), MRM_TYPE_DEVICE, MrmDeviceClass))
 
+typedef enum {
+    MRM_DEVICE_STATUS_UNKNOWN,
+    MRM_DEVICE_STATUS_READY,
+    MRM_DEVICE_STATUS_SIM_PIN_LOCKED,
+    MRM_DEVICE_STATUS_SIM_PUK_LOCKED,
+    MRM_DEVICE_STATUS_SIM_ERROR,
+} MrmDeviceStatus;
+
 typedef struct _MrmDevice        MrmDevice;
 typedef struct _MrmDeviceClass   MrmDeviceClass;
 typedef struct _MrmDevicePrivate MrmDevicePrivate;
@@ -50,11 +58,13 @@ void       mrm_device_new        (GFile *file,
 MrmDevice *mrm_device_new_finish (GAsyncResult *res,
                                   GError **error);
 
-const gchar *mrm_device_get_name         (MrmDevice *self);
-const gchar *mrm_device_get_manufacturer (MrmDevice *self);
-const gchar *mrm_device_get_model        (MrmDevice *self);
-const gchar *mrm_device_get_revision     (MrmDevice *self);
-QmiDevice   *mrm_device_peek_qmi_device  (MrmDevice *self);
+const gchar     *mrm_device_get_name         (MrmDevice *self);
+const gchar     *mrm_device_get_manufacturer (MrmDevice *self);
+const gchar     *mrm_device_get_model        (MrmDevice *self);
+const gchar     *mrm_device_get_revision     (MrmDevice *self);
+MrmDeviceStatus  mrm_device_get_status       (MrmDevice *self);
+
+QmiDevice       *mrm_device_peek_qmi_device  (MrmDevice *self);
 
 G_END_DECLS
 

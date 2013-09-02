@@ -42,9 +42,121 @@ struct _MrmDevicePrivate {
     gchar *model;
     gchar *revision;
 
-    /* NAS client */
+    /* Device status */
+    MrmDeviceStatus status;
+
+    /* Clients */
+    QmiClient *dms;
     QmiClient *nas;
 };
+
+/*****************************************************************************/
+/* Reload status */
+
+static gboolean
+reload_status_finish (MrmDevice *self,
+                      GAsyncResult *res,
+                      GError **error)
+{
+    return !g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (res), error);
+}
+
+static void
+qmi_client_dms_get_pin_status_ready (QmiClientDms *dms,
+                                     GAsyncResult *res,
+                                     GSimpleAsyncResult *simple)
+{
+    QmiDmsUimPinStatus current_status;
+    QmiMessageDmsUimGetPinStatusOutput *output;
+    GError *error = NULL;
+    MrmDevice *self;
+
+    self = MRM_DEVICE (g_async_result_get_source_object (G_ASYNC_RESULT (simple)));
+    output = qmi_client_dms_uim_get_pin_status_finish (dms, res, &error);
+    if (!output) {
+        g_prefix_error (&error, "QMI operation failed: ");
+        g_simple_async_result_take_error (simple, error);
+    } else if (!qmi_message_dms_uim_get_pin_status_output_get_result (output, &error)) {
+        /* QMI error internal when checking PIN status likely means NO SIM */
+        if (g_error_matches (error, QMI_PROTOCOL_ERROR, QMI_PROTOCOL_ERROR_INTERNAL)) {
+            self->priv->status = MRM_DEVICE_STATUS_SIM_ERROR;
+            g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+            g_error_free (error);
+        } else if (g_error_matches (error, QMI_PROTOCOL_ERROR, QMI_PROTOCOL_ERROR_INCORRECT_PIN)) {
+            self->priv->status = MRM_DEVICE_STATUS_SIM_PIN_LOCKED;
+            g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+            g_error_free (error);
+        } else {
+            g_prefix_error (&error, "couldn't get PIN status: ");
+            g_simple_async_result_take_error (simple, error);
+        }
+    } else if (!qmi_message_dms_uim_get_pin_status_output_get_pin1_status (
+                   output,
+                   &current_status,
+                   NULL, /* verify_retries_left */
+                   NULL, /* unblock_retries_left */
+                   &error)) {
+        g_prefix_error (&error, "couldn't get PIN1 status: ");
+        g_simple_async_result_take_error (simple, error);
+    } else {
+        switch (current_status) {
+        case QMI_DMS_UIM_PIN_STATUS_CHANGED:
+        case QMI_DMS_UIM_PIN_STATUS_UNBLOCKED:
+        case QMI_DMS_UIM_PIN_STATUS_DISABLED:
+        case QMI_DMS_UIM_PIN_STATUS_ENABLED_VERIFIED:
+            self->priv->status = MRM_DEVICE_STATUS_READY;
+            break;
+
+        case QMI_DMS_UIM_PIN_STATUS_BLOCKED:
+            self->priv->status = MRM_DEVICE_STATUS_SIM_PUK_LOCKED;
+            break;
+
+        case QMI_DMS_UIM_PIN_STATUS_PERMANENTLY_BLOCKED:
+            self->priv->status = MRM_DEVICE_STATUS_SIM_ERROR;
+            break;
+
+        case QMI_DMS_UIM_PIN_STATUS_NOT_INITIALIZED:
+        case QMI_DMS_UIM_PIN_STATUS_ENABLED_NOT_VERIFIED:
+            self->priv->status = MRM_DEVICE_STATUS_SIM_PIN_LOCKED;
+            break;
+
+        default:
+            /* Unknown SIM error */
+            self->priv->status = MRM_DEVICE_STATUS_SIM_ERROR;
+            break;
+        }
+
+        g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+    }
+
+    if (output)
+        qmi_message_dms_uim_get_pin_status_output_unref (output);
+    g_object_unref (self);
+
+    g_simple_async_result_complete (simple);
+    g_object_unref (simple);
+}
+
+static void
+reload_status (MrmDevice *self,
+               GCancellable *cancellable,
+               GAsyncReadyCallback callback,
+               gpointer user_data)
+{
+    g_return_if_fail (QMI_IS_CLIENT_DMS (self->priv->dms));
+
+    qmi_client_dms_uim_get_pin_status (
+        QMI_CLIENT_DMS (self->priv->dms),
+        NULL,
+        5,
+        cancellable,
+        (GAsyncReadyCallback) qmi_client_dms_get_pin_status_ready,
+        g_simple_async_result_new (
+            G_OBJECT (self),
+            callback,
+            user_data,
+            reload_status));
+}
 
 /*****************************************************************************/
 /* Start NAS service monitoring */
@@ -166,6 +278,14 @@ mrm_device_get_name (MrmDevice *self)
     return self->priv->name;
 }
 
+MrmDeviceStatus
+mrm_device_get_status (MrmDevice *self)
+{
+    g_return_val_if_fail (MRM_IS_DEVICE (self), MRM_DEVICE_STATUS_UNKNOWN);
+
+    return self->priv->status;
+}
+
 /*****************************************************************************/
 /* New MRM device */
 
@@ -205,7 +325,6 @@ typedef struct {
     MrmDevice *self;
     GSimpleAsyncResult *result;
     GCancellable *cancellable;
-    QmiClient *dms;
 } InitContext;
 
 static void
@@ -214,16 +333,6 @@ init_context_complete_and_free (InitContext *ctx)
     g_simple_async_result_complete_in_idle (ctx->result);
     if (ctx->cancellable)
         g_object_unref (ctx->cancellable);
-    if (ctx->dms) {
-        qmi_device_release_client (ctx->self->priv->qmi_device,
-                                   ctx->dms,
-                                   QMI_DEVICE_RELEASE_CLIENT_FLAGS_RELEASE_CID,
-                                   5,
-                                   NULL,
-                                   NULL,
-                                   NULL);
-        g_object_unref (ctx->dms);
-    }
     g_object_unref (ctx->result);
     g_object_unref (ctx->self);
     g_slice_free (InitContext, ctx);
@@ -235,6 +344,22 @@ initable_init_finish (GAsyncInitable  *initable,
                       GError         **error)
 {
     return !g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result), error);
+}
+
+static void
+init_reload_status_ready (MrmDevice *self,
+                          GAsyncResult *res,
+                          InitContext *ctx)
+{
+    GError *error = NULL;
+
+    if (!reload_status_finish (self, res, &error)) {
+        g_prefix_error (&error, "Cannot reload modem status: ");
+        g_simple_async_result_take_error (ctx->result, error);
+    } else
+        g_simple_async_result_set_op_res_gboolean (ctx->result, TRUE);
+
+    init_context_complete_and_free (ctx);
 }
 
 static void
@@ -252,16 +377,17 @@ qmi_client_dms_get_revision_ready (QmiClientDms *dms,
         !qmi_message_dms_get_revision_output_get_revision (output, &str, &error)) {
         g_prefix_error (&error, "Cannot get revision: ");
         g_simple_async_result_take_error (ctx->result, error);
+        init_context_complete_and_free (ctx);
     } else {
         ctx->self->priv->revision = g_strdup (str);
-        /* All done! */
-        g_simple_async_result_set_op_res_gboolean (ctx->result, TRUE);
+        reload_status (ctx->self,
+                       ctx->cancellable,
+                       (GAsyncReadyCallback) init_reload_status_ready,
+                       ctx);
     }
 
     if (output)
         qmi_message_dms_get_revision_output_unref (output);
-
-    init_context_complete_and_free (ctx);
 }
 
 static void
@@ -282,7 +408,7 @@ qmi_client_dms_get_model_ready (QmiClientDms *dms,
         init_context_complete_and_free (ctx);
     } else {
         ctx->self->priv->model = g_strdup (str);
-        qmi_client_dms_get_revision (QMI_CLIENT_DMS (ctx->dms),
+        qmi_client_dms_get_revision (QMI_CLIENT_DMS (ctx->self->priv->dms),
                                      NULL,
                                      5,
                                      ctx->cancellable,
@@ -312,7 +438,7 @@ qmi_client_dms_get_manufacturer_ready (QmiClientDms *dms,
         init_context_complete_and_free (ctx);
     } else {
         ctx->self->priv->manufacturer = g_strdup (str);
-        qmi_client_dms_get_model (QMI_CLIENT_DMS (ctx->dms),
+        qmi_client_dms_get_model (QMI_CLIENT_DMS (ctx->self->priv->dms),
                                   NULL,
                                   5,
                                   ctx->cancellable,
@@ -331,8 +457,8 @@ qmi_device_allocate_client_ready (QmiDevice *device,
 {
     GError *error = NULL;
 
-    ctx->dms = qmi_device_allocate_client_finish (device, res, &error);
-    if (!ctx->dms) {
+    ctx->self->priv->dms = qmi_device_allocate_client_finish (device, res, &error);
+    if (!ctx->self->priv->dms) {
         g_prefix_error (&error, "Cannot allocate DMS client: ");
         g_simple_async_result_take_error (ctx->result, error);
         init_context_complete_and_free (ctx);
@@ -341,7 +467,7 @@ qmi_device_allocate_client_ready (QmiDevice *device,
 
     g_debug ("DMS client at '%s' correctly allocated", qmi_device_get_path_display (device));
 
-    qmi_client_dms_get_manufacturer (QMI_CLIENT_DMS (ctx->dms),
+    qmi_client_dms_get_manufacturer (QMI_CLIENT_DMS (ctx->self->priv->dms),
                                      NULL,
                                      5,
                                      ctx->cancellable,
@@ -494,6 +620,17 @@ static void
 dispose (GObject *object)
 {
     MrmDevice *self = MRM_DEVICE (object);
+
+    if (self->priv->dms) {
+        qmi_device_release_client (self->priv->qmi_device,
+                                   self->priv->dms,
+                                   QMI_DEVICE_RELEASE_CLIENT_FLAGS_RELEASE_CID,
+                                   5,
+                                   NULL,
+                                   NULL,
+                                   NULL);
+        g_clear_object (&self->priv->dms);
+    }
 
     if (self->priv->nas) {
         qmi_device_release_client (self->priv->qmi_device,
