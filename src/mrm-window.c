@@ -122,6 +122,20 @@ device_list_update_header (GtkListBoxRow  *row,
     }
 }
 
+static gint
+device_list_sort (GtkListBoxRow *row1,
+                  GtkListBoxRow *row2,
+                  gpointer user_data)
+{
+    MrmDevice *device1;
+    MrmDevice *device2;
+
+    device1 = MRM_DEVICE (g_object_get_data (G_OBJECT (row1), DEVICE_TAG));
+    device2 = MRM_DEVICE (g_object_get_data (G_OBJECT (row2), DEVICE_TAG));
+
+    return g_strcmp0 (mrm_device_get_name (device1), mrm_device_get_name (device2));
+}
+
 static void
 device_list_activate_row (MrmWindow *self,
                           GtkListBoxRow *row)
@@ -145,12 +159,11 @@ device_added_cb (MrmApp *application,
     box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 50);
     gtk_container_add (GTK_CONTAINER (row), box);
     gtk_widget_set_hexpand (box, TRUE);
-    gtk_container_add (GTK_CONTAINER (self->priv->device_list_box), row);
-
     g_object_set_data_full (G_OBJECT (row),
                             DEVICE_TAG,
                             g_object_ref (device),
                             g_object_unref);
+    gtk_container_add (GTK_CONTAINER (self->priv->device_list_box), row);
 
     button_label_markup = g_strdup_printf ("[%s]\n\t<span weight=\"bold\">%s</span>\n\t<span style=\"italic\">%s</span>",
                                            mrm_device_get_name (device),
@@ -355,6 +368,10 @@ mrm_window_init (MrmWindow *self)
     gtk_list_box_set_header_func (GTK_LIST_BOX (self->priv->device_list_box),
                                   device_list_update_header,
                                   NULL, NULL);
+
+    gtk_list_box_set_sort_func (GTK_LIST_BOX (self->priv->device_list_box),
+                                device_list_sort,
+                                NULL, NULL);
 
     gtk_widget_show (self->priv->device_list_label);
     gtk_frame_set_shadow_type (GTK_FRAME (self->priv->device_list_frame), GTK_SHADOW_NONE);
