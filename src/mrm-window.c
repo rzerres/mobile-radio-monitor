@@ -168,12 +168,33 @@ device_added_cb (MrmApp *application,
     gtk_widget_set_hexpand (button_label, TRUE);
     gtk_box_pack_start (GTK_BOX (box), button_label, TRUE, TRUE, 0);
 
-    status = gtk_label_new ("Available");
+    status = gtk_label_new (NULL);
     gtk_widget_set_margin_left (status, 20);
     gtk_widget_set_margin_right (status, 20);
     gtk_widget_set_halign (status, GTK_ALIGN_END);
     gtk_widget_set_valign (status, GTK_ALIGN_CENTER);
     gtk_box_pack_end (GTK_BOX (box), status, FALSE, FALSE, 0);
+
+    switch (mrm_device_get_status (device)) {
+    case MRM_DEVICE_STATUS_UNKNOWN:
+        gtk_label_set_text (GTK_LABEL (status), "Unknown status");
+        gtk_widget_set_sensitive (row, FALSE);
+        break;
+    case MRM_DEVICE_STATUS_READY:
+        gtk_label_set_text (GTK_LABEL (status), "Ready");
+        break;
+    case MRM_DEVICE_STATUS_SIM_PIN_LOCKED:
+        gtk_label_set_text (GTK_LABEL (status), "PIN required");
+        break;
+    case MRM_DEVICE_STATUS_SIM_PUK_LOCKED:
+        gtk_label_set_text (GTK_LABEL (status), "PUK required");
+        gtk_widget_set_sensitive (row, FALSE);
+        break;
+    case MRM_DEVICE_STATUS_SIM_ERROR:
+        gtk_label_set_text (GTK_LABEL (status), "SIM error");
+        gtk_widget_set_sensitive (row, FALSE);
+        break;
+    }
 
     gtk_widget_show_all (row);
 
