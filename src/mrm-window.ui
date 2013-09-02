@@ -91,7 +91,7 @@
         <property name="can_focus">True</property>
         <property name="show_tabs">False</property>
         <child>
-          <object class="GtkBox" id="device_list_box">
+          <object class="GtkBox" id="device_list_vbox">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="halign">center</property>
@@ -102,10 +102,31 @@
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="xalign">0</property>
-                <property name="label" translatable="yes">LABEL:</property>
+                <property name="label" translatable="yes">No available QMI devices</property>
                 <attributes>
                   <attribute name="weight" value="bold"/>
                 </attributes>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkFrame" id="device_list_frame">
+                <property name="visible">False</property>
+                <property name="can_focus">False</property>
+                <property name="shadow_type">in</property>
+                <child>
+                  <object class="GtkListBox" id="device_list_box">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="halign">center</property>
+                    <property name="valign">center</property>
+                    <property name="selection-mode">none</property>
+                  </object>
+                </child>
               </object>
               <packing>
                 <property name="expand">False</property>

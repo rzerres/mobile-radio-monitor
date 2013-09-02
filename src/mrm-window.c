@@ -20,9 +20,6 @@
 #include "mrm-window.h"
 #include "mrm-device.h"
 
-#define LABEL_NONE_AVAILABLE "No available QMI devices"
-#define LABEL_AVAILABLE      "Available QMI devices:"
-
 #define NOTEBOOK_TAB_DEVICE_LIST 0
 #define NOTEBOOK_TAB_SIGNAL_INFO 1
 
@@ -33,6 +30,7 @@ struct _MrmWindowPrivate {
     GtkWidget *back_button;
 
     /* Device list tab */
+    GtkWidget *device_list_frame;
     GtkWidget *device_list_box;
     GtkWidget *device_list_label;
     GtkWidget *device_list_spinner_box;
@@ -107,11 +105,29 @@ mrm_window_open_device (MrmWindow *self,
 #define DEVICE_TAG "device-tag"
 
 static void
-device_button_clicked (GtkButton *button,
-                       MrmWindow *self)
+device_list_update_header (GtkListBoxRow  *row,
+                           GtkListBoxRow  *before,
+                           gpointer    user_data)
+{
+    GtkWidget *current;
+
+    if (!before)
+        return;
+
+    current = gtk_list_box_row_get_header (row);
+    if (!current) {
+        current = gtk_separator_new (GTK_ORIENTATION_HORIZONTAL);
+        gtk_widget_show (current);
+        gtk_list_box_row_set_header (row, current);
+    }
+}
+
+static void
+device_list_activate_row (MrmWindow *self,
+                          GtkListBoxRow *row)
 {
     mrm_window_open_device (self,
-                            MRM_DEVICE (g_object_get_data (G_OBJECT (button), DEVICE_TAG)));
+                            MRM_DEVICE (g_object_get_data (G_OBJECT (row), DEVICE_TAG)));
 }
 
 static void
@@ -119,9 +135,22 @@ device_added_cb (MrmApp *application,
                  MrmDevice *device,
                  MrmWindow *self)
 {
-    GtkWidget *button;
+    GtkWidget *row;
+    GtkWidget *box;
     GtkWidget *button_label;
     gchar *button_label_markup;
+    GtkWidget *status;
+
+    row = gtk_list_box_row_new ();
+    box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 50);
+    gtk_container_add (GTK_CONTAINER (row), box);
+    gtk_widget_set_hexpand (box, TRUE);
+    gtk_container_add (GTK_CONTAINER (self->priv->device_list_box), row);
+
+    g_object_set_data_full (G_OBJECT (row),
+                            DEVICE_TAG,
+                            g_object_ref (device),
+                            g_object_unref);
 
     button_label_markup = g_strdup_printf ("[%s]\n\t<span weight=\"bold\">%s</span>\n\t<span style=\"italic\">%s</span>",
                                            mrm_device_get_name (device),
@@ -129,30 +158,28 @@ device_added_cb (MrmApp *application,
                                            mrm_device_get_manufacturer (device));
     button_label = gtk_label_new (NULL);
     gtk_label_set_markup (GTK_LABEL (button_label), button_label_markup);
-    g_free (button_label_markup);
-    button = gtk_button_new ();
-    gtk_container_add (GTK_CONTAINER (button), button_label);
-    gtk_button_set_alignment (GTK_BUTTON (button), 0.0, 0.5);
+    gtk_misc_set_alignment (GTK_MISC (button_label), 0.0f, 0.5f);
+    gtk_widget_set_margin_left (button_label, 20);
+    gtk_widget_set_margin_right (button_label, 20);
+    gtk_widget_set_margin_top (button_label, 12);
+    gtk_widget_set_margin_bottom (button_label, 12);
+    gtk_widget_set_halign (button_label, GTK_ALIGN_START);
+    gtk_widget_set_valign (button_label, GTK_ALIGN_CENTER);
+    gtk_widget_set_hexpand (button_label, TRUE);
+    gtk_box_pack_start (GTK_BOX (box), button_label, TRUE, TRUE, 0);
 
-    g_object_set_data_full (G_OBJECT (button),
-                            DEVICE_TAG,
-                            g_object_ref (device),
-                            g_object_unref);
+    status = gtk_label_new ("Available");
+    gtk_widget_set_margin_left (status, 20);
+    gtk_widget_set_margin_right (status, 20);
+    gtk_widget_set_halign (status, GTK_ALIGN_END);
+    gtk_widget_set_valign (status, GTK_ALIGN_CENTER);
+    gtk_box_pack_end (GTK_BOX (box), status, FALSE, FALSE, 0);
 
-    g_signal_connect (button,
-                      "clicked",
-                      G_CALLBACK (device_button_clicked),
-                      self);
+    gtk_widget_show_all (row);
 
-    gtk_widget_show_all (button);
-    gtk_box_pack_end (GTK_BOX (self->priv->device_list_box),
-                      button,
-                      FALSE, /* expand */
-                      FALSE, /* fill */
-                      4); /* padding */
-
-    gtk_label_set_text (GTK_LABEL (self->priv->device_list_label),
-                        LABEL_AVAILABLE);
+    gtk_widget_hide (self->priv->device_list_label);
+    gtk_frame_set_shadow_type (GTK_FRAME (self->priv->device_list_frame), GTK_SHADOW_IN);
+    gtk_widget_show (self->priv->device_list_frame);
 }
 
 static void
@@ -181,10 +208,11 @@ device_removed_cb (MrmApp *application,
             valid++;
     }
 
-    /* If this was the last item; change label */
-    if (removed && !valid)
-        gtk_label_set_text (GTK_LABEL (self->priv->device_list_label),
-                            LABEL_NONE_AVAILABLE);
+    /* If this was the last item; show label and hide list */
+    if (removed && !valid) {
+        gtk_widget_hide (self->priv->device_list_frame);
+        gtk_widget_show (self->priv->device_list_label);
+    }
 
     g_list_free (children);
 }
@@ -209,9 +237,6 @@ populate_device_list (MrmWindow *self)
                           "device-removed",
                           G_CALLBACK (device_removed_cb),
                           self);
-
-    gtk_label_set_text (GTK_LABEL (self->priv->device_list_label),
-                        LABEL_NONE_AVAILABLE);
 
     for (l = mrm_app_peek_devices (application); l; l = g_list_next (l))
         device_added_cb (application, MRM_DEVICE (l->data), self);
@@ -300,6 +325,19 @@ mrm_window_init (MrmWindow *self)
                       "clicked",
                       G_CALLBACK (back_button_clicked),
                       self);
+
+    g_signal_connect_swapped (self->priv->device_list_box,
+                              "row-activated",
+                              G_CALLBACK (device_list_activate_row),
+                              self);
+
+    gtk_list_box_set_header_func (GTK_LIST_BOX (self->priv->device_list_box),
+                                  device_list_update_header,
+                                  NULL, NULL);
+
+    gtk_widget_show (self->priv->device_list_label);
+    gtk_frame_set_shadow_type (GTK_FRAME (self->priv->device_list_frame), GTK_SHADOW_NONE);
+    gtk_widget_hide (self->priv->device_list_frame);
 }
 
 static void
@@ -351,6 +389,7 @@ mrm_window_class_init (MrmWindowClass *klass)
     gtk_widget_class_set_template_from_resource  (widget_class, "/es/aleksander/mrm/mrm-window.ui");
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, notebook);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, back_button);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, device_list_frame);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, device_list_box);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, device_list_label);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, device_list_spinner_box);
