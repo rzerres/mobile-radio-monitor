@@ -71,3 +71,6 @@ mrm-resources.h: mrm.gresource.xml $(resource_file_dependencies)
 CLEANFILES = \
 	mrm-resources.h mrm-resources.c \
 	mrm-error-types.h mrm-error-types.c
+
+EXTRA_DIST = \
+	mrm-window.ui
