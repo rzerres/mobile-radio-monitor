@@ -164,6 +164,102 @@ reload_status (MrmDevice *self,
 }
 
 /*****************************************************************************/
+
+gboolean
+mrm_device_unlock_finish (MrmDevice *self,
+                          GAsyncResult *res,
+                          GError **error)
+{
+    if (self->priv->status != MRM_DEVICE_STATUS_READY) {
+        g_set_error (error,
+                     MRM_CORE_ERROR,
+                     MRM_CORE_ERROR_FAILED,
+                     "SIM still locked after unlock attempt");
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+static void
+after_pin_reload_status_ready (MrmDevice *self,
+                               GAsyncResult *res,
+                               GSimpleAsyncResult *simple)
+{
+    reload_status_finish (self, res, NULL);
+
+    g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+    g_simple_async_result_complete (simple);
+    g_object_unref (simple);
+}
+
+static void
+qmi_dms_uim_verify_pin_ready (QmiClientDms *client,
+                              GAsyncResult *res,
+                              GSimpleAsyncResult *simple)
+{
+    QmiMessageDmsUimVerifyPinOutput *output = NULL;
+    GError *error = NULL;
+    MrmDevice *self;
+
+    self = MRM_DEVICE (g_async_result_get_source_object (G_ASYNC_RESULT (simple)));
+
+    output = qmi_client_dms_uim_verify_pin_finish (client, res, NULL);
+    if (output)
+        qmi_message_dms_uim_verify_pin_output_unref (output);
+
+    /* Ignore errors here; just reload status */
+
+    reload_status (self,
+                   NULL,
+                   (GAsyncReadyCallback)after_pin_reload_status_ready,
+                   simple);
+
+    g_object_unref (self);
+}
+
+void
+mrm_device_unlock (MrmDevice *self,
+                   const gchar *pin,
+                   GCancellable *cancellable,
+                   GAsyncReadyCallback callback,
+                   gpointer user_data)
+{
+    GSimpleAsyncResult *simple;
+    QmiMessageDmsUimVerifyPinInput *input;
+
+    simple = g_simple_async_result_new (G_OBJECT (self),
+                                        callback,
+                                        user_data,
+                                        mrm_device_unlock);
+
+
+    if (self->priv->status != MRM_DEVICE_STATUS_SIM_PIN_LOCKED) {
+        g_simple_async_result_set_error (simple,
+                                         MRM_CORE_ERROR,
+                                         MRM_CORE_ERROR_FAILED,
+                                         "Wrong state: PIN unlocking not required");
+        g_simple_async_result_complete_in_idle (simple);
+        g_object_unref (simple);
+        return;
+    }
+
+    input = qmi_message_dms_uim_verify_pin_input_new ();
+    qmi_message_dms_uim_verify_pin_input_set_info (
+        input,
+        QMI_DMS_UIM_PIN_ID_PIN,
+        pin,
+        NULL);
+    qmi_client_dms_uim_verify_pin (QMI_CLIENT_DMS (self->priv->dms),
+                                   input,
+                                   5,
+                                   NULL,
+                                   (GAsyncReadyCallback)qmi_dms_uim_verify_pin_ready,
+                                   simple);
+    qmi_message_dms_uim_verify_pin_input_unref (input);
+}
+
+/*****************************************************************************/
 /* Start NAS service monitoring */
 
 typedef struct {

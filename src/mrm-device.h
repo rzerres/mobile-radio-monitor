@@ -66,6 +66,15 @@ MrmDeviceStatus  mrm_device_get_status       (MrmDevice *self);
 
 QmiDevice       *mrm_device_peek_qmi_device  (MrmDevice *self);
 
+void     mrm_device_unlock        (MrmDevice *self,
+                                   const gchar *pin,
+                                   GCancellable *cancellable,
+                                   GAsyncReadyCallback callback,
+                                   gpointer user_data);
+gboolean mrm_device_unlock_finish (MrmDevice *self,
+                                   GAsyncResult *res,
+                                   GError **error);
+
 G_END_DECLS
 
 #endif /* __MRM_DEVICE_H__ */
