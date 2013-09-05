@@ -27,6 +27,7 @@ struct _MrmWindowPrivate {
     GtkWidget *notebook;
 
     /* Header bar */
+    GtkWidget *header_bar;
     GtkWidget *back_button;
 
     /* Device list tab */
@@ -82,13 +83,20 @@ error_dialog (const gchar *primary_text,
 static void
 select_device_list_tab (MrmWindow *self)
 {
+    gtk_header_bar_set_title (GTK_HEADER_BAR (self->priv->header_bar), "Mobile Radio Monitor");
     gtk_widget_set_sensitive (self->priv->back_button, FALSE);
     gtk_notebook_set_current_page (GTK_NOTEBOOK (self->priv->notebook), NOTEBOOK_TAB_DEVICE_LIST);
 }
 
 static void
-select_signal_info_tab (MrmWindow *self)
+select_signal_info_tab (MrmWindow *self,
+                        MrmDevice *device)
 {
+    gchar *title;
+
+    title = g_strdup_printf ("Mobile Radio Monitor - %s", mrm_device_get_model (device));
+    gtk_header_bar_set_title (GTK_HEADER_BAR (self->priv->header_bar), title);
+    g_free (title);
     gtk_widget_set_sensitive (self->priv->back_button, TRUE);
     gtk_notebook_set_current_page (GTK_NOTEBOOK (self->priv->notebook), NOTEBOOK_TAB_SIGNAL_INFO);
 }
@@ -99,7 +107,7 @@ void
 mrm_window_open_device (MrmWindow *self,
                         MrmDevice *device)
 {
-    select_signal_info_tab (self);
+    select_signal_info_tab (self, device);
 
     /* TODO: more */
 }
@@ -560,6 +568,7 @@ mrm_window_class_init (MrmWindowClass *klass)
     /* Bind class to template */
     gtk_widget_class_set_template_from_resource  (widget_class, "/es/aleksander/mrm/mrm-window.ui");
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, notebook);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, header_bar);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, back_button);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, device_list_frame);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, device_list_box);
