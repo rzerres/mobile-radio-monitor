@@ -27,6 +27,7 @@ enum {
     PROP_0,
     PROP_FILE,
     PROP_QMI_DEVICE,
+    PROP_STATUS,
     PROP_LAST
 };
 
@@ -133,6 +134,9 @@ qmi_client_dms_get_pin_status_ready (QmiClientDms *dms,
     if (output)
         qmi_message_dms_uim_get_pin_status_output_unref (output);
     g_object_unref (self);
+
+    /* Notify about the internal property change */
+    g_object_notify_by_pspec (G_OBJECT (self), properties[PROP_STATUS]);
 
     g_simple_async_result_complete (simple);
     g_object_unref (simple);
@@ -583,6 +587,7 @@ set_property (GObject *object,
             self->priv->name = g_file_get_basename (self->priv->file);
         break;
     case PROP_QMI_DEVICE:
+    case PROP_STATUS:
         g_assert_not_reached ();
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -604,6 +609,9 @@ get_property (GObject *object,
         break;
     case PROP_QMI_DEVICE:
         g_value_set_object (value, self->priv->qmi_device);
+        break;
+    case PROP_STATUS:
+        g_value_set_enum (value, self->priv->status);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -699,4 +707,13 @@ mrm_device_class_init (MrmDeviceClass *klass)
                              QMI_TYPE_DEVICE,
                              G_PARAM_READABLE);
     g_object_class_install_property (object_class, PROP_QMI_DEVICE, properties[PROP_QMI_DEVICE]);
+
+    properties[PROP_STATUS] =
+        g_param_spec_enum ("status",
+                           "Status",
+                           "Status of the modem",
+                           MRM_TYPE_DEVICE_STATUS,
+                           MRM_DEVICE_STATUS_UNKNOWN,
+                           G_PARAM_READABLE);
+    g_object_class_install_property (object_class, PROP_STATUS, properties[PROP_STATUS]);
 }
