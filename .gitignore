@@ -22,5 +22,7 @@ src/mrm-resources.h
 src/mrm-resources.c
 src/mrm-error-types.c
 src/mrm-error-types.h
+src/mrm-enum-types.c
+src/mrm-enum-types.h
 
 tests/test-graph

@@ -16,6 +16,7 @@
 #include "mrm-device.h"
 #include "mrm-error.h"
 #include "mrm-error-types.h"
+#include "mrm-enum-types.h"
 
 static void async_initable_iface_init (GAsyncInitableIface *iface);
 

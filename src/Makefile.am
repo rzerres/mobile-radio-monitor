@@ -7,6 +7,7 @@ bin_PROGRAMS = mobile-radio-monitor
 mobile_radio_monitor_SOURCES = \
 	mrm-resources.h mrm-resources.c \
 	mrm-error.h mrm-error-types.h mrm-error-types.c \
+	mrm-enum-types.h mrm-enum-types.c \
 	mrm-graph.h mrm-graph.c \
 	mrm-device.h mrm-device.c \
 	mrm-window.h mrm-window.c \
@@ -42,6 +43,25 @@ mrm-error-types.c: Makefile.am mrm-error.h $(top_srcdir)/build-aux/mrm-error-typ
 		mrm-error.h > $@
 
 ################################################################################
+# Enum types
+
+ENUMS = \
+	$(srcdir)/mrm-device.h
+
+mrm-enum-types.h: Makefile.am $(ENUMS) $(top_srcdir)/build-aux/mrm-enum-types-template.h
+	$(AM_V_GEN) $(GLIB_MKENUMS) \
+		--fhead "#include \"mrm-device.h\"\n#ifndef __MRM_ENUM_TYPES_H__\n#define __MRM_ENUM_TYPES_H__\n" \
+		--template $(top_srcdir)/build-aux/mrm-enum-types-template.h \
+		--ftail "#endif /* __MRM_ENUM_TYPES_H__ */\n" \
+		$(ENUMS) > $@
+
+mrm-enum-types.c: Makefile.am $(top_srcdir)/build-aux/mrm-enum-types-template.c mrm-enum-types.h
+	$(AM_V_GEN) $(GLIB_MKENUMS) \
+		--fhead "#include \"mrm-enum-types.h\"" \
+		--template $(top_srcdir)/build-aux/mrm-enum-types-template.c \
+		$(ENUMS) > $@
+
+################################################################################
 # Resource files
 
 resource_file_dependencies = \
@@ -70,7 +90,8 @@ mrm-resources.h: mrm.gresource.xml $(resource_file_dependencies)
 
 CLEANFILES = \
 	mrm-resources.h mrm-resources.c \
-	mrm-error-types.h mrm-error-types.c
+	mrm-error-types.h mrm-error-types.c \
+	mrm-enum-types.h mrm-enum-types.c
 
 EXTRA_DIST = \
 	mrm-window.ui
