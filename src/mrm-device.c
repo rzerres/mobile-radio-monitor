@@ -46,6 +46,7 @@ struct _MrmDevicePrivate {
 
     /* Device status */
     MrmDeviceStatus status;
+    gint pin_attempts_left;
 
     /* Clients */
     QmiClient *dms;
@@ -69,6 +70,7 @@ qmi_client_dms_get_pin_status_ready (QmiClientDms *dms,
                                      GSimpleAsyncResult *simple)
 {
     QmiDmsUimPinStatus current_status;
+    guint8 pin1_status_verify_retries_left;
     QmiMessageDmsUimGetPinStatusOutput *output;
     GError *error = NULL;
     MrmDevice *self;
@@ -85,9 +87,18 @@ qmi_client_dms_get_pin_status_ready (QmiClientDms *dms,
             g_simple_async_result_set_op_res_gboolean (simple, TRUE);
             g_error_free (error);
         } else if (g_error_matches (error, QMI_PROTOCOL_ERROR, QMI_PROTOCOL_ERROR_INCORRECT_PIN)) {
-            self->priv->status = MRM_DEVICE_STATUS_SIM_PIN_LOCKED;
-            g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+            /* Stupid modem... retry until we get a proper result */
+            qmi_client_dms_uim_get_pin_status (
+                QMI_CLIENT_DMS (dms),
+                NULL,
+                5,
+                NULL,
+                (GAsyncReadyCallback) qmi_client_dms_get_pin_status_ready,
+                simple);
+            qmi_message_dms_uim_get_pin_status_output_unref (output);
+            g_object_unref (self);
             g_error_free (error);
+            return;
         } else {
             g_prefix_error (&error, "couldn't get PIN status: ");
             g_simple_async_result_take_error (simple, error);
@@ -95,7 +106,7 @@ qmi_client_dms_get_pin_status_ready (QmiClientDms *dms,
     } else if (!qmi_message_dms_uim_get_pin_status_output_get_pin1_status (
                    output,
                    &current_status,
-                   NULL, /* verify_retries_left */
+                   &pin1_status_verify_retries_left, /* verify_retries_left */
                    NULL, /* unblock_retries_left */
                    &error)) {
         g_prefix_error (&error, "couldn't get PIN1 status: ");
@@ -106,24 +117,29 @@ qmi_client_dms_get_pin_status_ready (QmiClientDms *dms,
         case QMI_DMS_UIM_PIN_STATUS_UNBLOCKED:
         case QMI_DMS_UIM_PIN_STATUS_DISABLED:
         case QMI_DMS_UIM_PIN_STATUS_ENABLED_VERIFIED:
+            self->priv->pin_attempts_left = -1;
             self->priv->status = MRM_DEVICE_STATUS_READY;
             break;
 
         case QMI_DMS_UIM_PIN_STATUS_BLOCKED:
+            self->priv->pin_attempts_left = 0;
             self->priv->status = MRM_DEVICE_STATUS_SIM_PUK_LOCKED;
             break;
 
         case QMI_DMS_UIM_PIN_STATUS_PERMANENTLY_BLOCKED:
+            self->priv->pin_attempts_left = -1;
             self->priv->status = MRM_DEVICE_STATUS_SIM_ERROR;
             break;
 
         case QMI_DMS_UIM_PIN_STATUS_NOT_INITIALIZED:
         case QMI_DMS_UIM_PIN_STATUS_ENABLED_NOT_VERIFIED:
+            self->priv->pin_attempts_left = (gint)pin1_status_verify_retries_left;
             self->priv->status = MRM_DEVICE_STATUS_SIM_PIN_LOCKED;
             break;
 
         default:
             /* Unknown SIM error */
+            self->priv->pin_attempts_left = -1;
             self->priv->status = MRM_DEVICE_STATUS_SIM_ERROR;
             break;
         }
@@ -221,7 +237,6 @@ qmi_dms_uim_verify_pin_ready (QmiClientDms *client,
 void
 mrm_device_unlock (MrmDevice *self,
                    const gchar *pin,
-                   GCancellable *cancellable,
                    GAsyncReadyCallback callback,
                    gpointer user_data)
 {
@@ -385,6 +400,14 @@ mrm_device_get_status (MrmDevice *self)
     g_return_val_if_fail (MRM_IS_DEVICE (self), MRM_DEVICE_STATUS_UNKNOWN);
 
     return self->priv->status;
+}
+
+gint
+mrm_device_get_pin_attempts_left (MrmDevice *self)
+{
+    g_return_val_if_fail (MRM_IS_DEVICE (self), -1);
+
+    return self->priv->pin_attempts_left;
 }
 
 /*****************************************************************************/
@@ -719,6 +742,7 @@ static void
 mrm_device_init (MrmDevice *self)
 {
     self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, MRM_TYPE_DEVICE, MrmDevicePrivate);
+    self->priv->pin_attempts_left = -1; /* i.e., N/A */
 }
 
 static void
