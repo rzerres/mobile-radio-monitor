@@ -34,6 +34,10 @@ struct _MrmWindowPrivate {
     GtkWidget *device_list_box;
     GtkWidget *device_list_label;
     GtkWidget *device_list_spinner_box;
+    GtkWidget *pin_entry_frame;
+    GtkWidget *pin_entry;
+    GtkWidget *attempts_label;
+    GtkWidget *pin_check_spinner_box;
 
     guint initial_scan_done_id;
     guint device_detection_id;
@@ -137,11 +141,101 @@ device_list_sort (GtkListBoxRow *row1,
 }
 
 static void
+show_pin_request (MrmWindow *self,
+                  MrmDevice *device)
+{
+    gint attempts;
+    gchar *text;
+
+    attempts = mrm_device_get_pin_attempts_left (device);
+    if (attempts >= 0)
+        text = g_strdup_printf ("%d attempts left", attempts);
+    else
+        text = g_strdup_printf ("unknown attempts left");
+
+    gtk_label_set_text (GTK_LABEL (self->priv->attempts_label), text);
+    gtk_entry_set_text (GTK_ENTRY (self->priv->pin_entry), "");
+    gtk_widget_grab_focus (self->priv->pin_entry);
+    gtk_widget_show (self->priv->attempts_label);
+    gtk_widget_hide (self->priv->pin_check_spinner_box);
+    gtk_widget_show (self->priv->pin_entry_frame);
+
+    g_free (text);
+}
+
+static void
+reset_pin_request (MrmWindow *self)
+{
+    gtk_label_set_text (GTK_LABEL (self->priv->attempts_label), "");
+    gtk_entry_set_text (GTK_ENTRY (self->priv->pin_entry), "");
+    gtk_widget_show (self->priv->attempts_label);
+    gtk_widget_hide (self->priv->pin_check_spinner_box);
+    gtk_widget_hide (self->priv->pin_entry_frame);
+}
+
+static void
+ongoing_pin_request (MrmWindow *self)
+{
+    gtk_widget_show (self->priv->pin_check_spinner_box);
+    gtk_widget_hide (self->priv->attempts_label);
+}
+
+static void
+device_unlock_ready (MrmDevice *device,
+                     GAsyncResult *res,
+                     MrmWindow *self)
+{
+    /* Reset PIN unlocking widgets */
+    reset_pin_request (self);
+
+    if (!mrm_device_unlock_finish (device, res, NULL)) {
+        /* Retry */
+        show_pin_request (self, device);
+        return;
+    }
+
+    /* Hide PIN unlocking widgets and go on */
+    gtk_widget_hide (self->priv->pin_entry_frame);
+    mrm_window_open_device (self, device);
+}
+
+static void
+pin_entry_activated_cb (MrmWindow *self,
+                        GtkEntry *pin_entry)
+{
+    GtkListBoxRow *row;
+    MrmDevice *device;
+
+    row = gtk_list_box_get_selected_row (GTK_LIST_BOX (self->priv->device_list_box));
+    if (!row)
+        return;
+
+    device = MRM_DEVICE (g_object_get_data (G_OBJECT (row), DEVICE_TAG));
+    if (!device)
+        return;
+
+    ongoing_pin_request (self);
+
+    mrm_device_unlock (device,
+                       gtk_entry_get_text (pin_entry),
+                       (GAsyncReadyCallback)device_unlock_ready,
+                       self);
+}
+
+static void
 device_list_activate_row (MrmWindow *self,
                           GtkListBoxRow *row)
 {
-    mrm_window_open_device (self,
-                            MRM_DEVICE (g_object_get_data (G_OBJECT (row), DEVICE_TAG)));
+    MrmDevice *device;
+
+    device = MRM_DEVICE (g_object_get_data (G_OBJECT (row), DEVICE_TAG));
+
+    if (mrm_device_get_status (device) != MRM_DEVICE_STATUS_SIM_PIN_LOCKED) {
+        mrm_window_open_device (self, device);
+        return;
+    }
+
+    show_pin_request (self, device);
 }
 
 static void
@@ -249,7 +343,6 @@ device_added_cb (MrmApp *application,
     gtk_widget_show_all (row);
 
     gtk_widget_hide (self->priv->device_list_label);
-    gtk_frame_set_shadow_type (GTK_FRAME (self->priv->device_list_frame), GTK_SHADOW_IN);
     gtk_widget_show (self->priv->device_list_frame);
 }
 
@@ -402,6 +495,11 @@ mrm_window_init (MrmWindow *self)
                               G_CALLBACK (device_list_activate_row),
                               self);
 
+    g_signal_connect_swapped (self->priv->pin_entry,
+                              "activate",
+                              G_CALLBACK (pin_entry_activated_cb),
+                              self);
+
     gtk_list_box_set_header_func (GTK_LIST_BOX (self->priv->device_list_box),
                                   device_list_update_header,
                                   NULL, NULL);
@@ -411,7 +509,6 @@ mrm_window_init (MrmWindow *self)
                                 NULL, NULL);
 
     gtk_widget_show (self->priv->device_list_label);
-    gtk_frame_set_shadow_type (GTK_FRAME (self->priv->device_list_frame), GTK_SHADOW_NONE);
     gtk_widget_hide (self->priv->device_list_frame);
 }
 
@@ -468,4 +565,8 @@ mrm_window_class_init (MrmWindowClass *klass)
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, device_list_box);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, device_list_label);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, device_list_spinner_box);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, pin_entry_frame);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, pin_entry);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, attempts_label);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, pin_check_spinner_box);
 }
