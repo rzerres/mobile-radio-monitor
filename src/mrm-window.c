@@ -145,6 +145,52 @@ device_list_activate_row (MrmWindow *self,
 }
 
 static void
+update_row_sensitivity (MrmDevice *device,
+                        GParamSpec *unused,
+                        GtkWidget *row)
+{
+    switch (mrm_device_get_status (device)) {
+    case MRM_DEVICE_STATUS_UNKNOWN:
+    case MRM_DEVICE_STATUS_SIM_PUK_LOCKED:
+    case MRM_DEVICE_STATUS_SIM_ERROR:
+        gtk_widget_set_sensitive (row, FALSE);
+        break;
+    case MRM_DEVICE_STATUS_READY:
+    case MRM_DEVICE_STATUS_SIM_PIN_LOCKED:
+        gtk_widget_set_sensitive (row, TRUE);
+        break;
+    default:
+        g_assert_not_reached ();
+    }
+}
+
+static void
+update_modem_status_label_text (MrmDevice *device,
+                                GParamSpec *unused,
+                                GtkWidget *status)
+{
+    switch (mrm_device_get_status (device)) {
+    case MRM_DEVICE_STATUS_UNKNOWN:
+        gtk_label_set_text (GTK_LABEL (status), "Unknown status");
+        break;
+    case MRM_DEVICE_STATUS_READY:
+        gtk_label_set_text (GTK_LABEL (status), "Ready");
+        break;
+    case MRM_DEVICE_STATUS_SIM_PIN_LOCKED:
+        gtk_label_set_text (GTK_LABEL (status), "PIN required");
+        break;
+    case MRM_DEVICE_STATUS_SIM_PUK_LOCKED:
+        gtk_label_set_text (GTK_LABEL (status), "PUK required");
+        break;
+    case MRM_DEVICE_STATUS_SIM_ERROR:
+        gtk_label_set_text (GTK_LABEL (status), "SIM error");
+        break;
+    default:
+        g_assert_not_reached ();
+    }
+}
+
+static void
 device_added_cb (MrmApp *application,
                  MrmDevice *device,
                  MrmWindow *self)
@@ -188,26 +234,17 @@ device_added_cb (MrmApp *application,
     gtk_widget_set_valign (status, GTK_ALIGN_CENTER);
     gtk_box_pack_end (GTK_BOX (box), status, FALSE, FALSE, 0);
 
-    switch (mrm_device_get_status (device)) {
-    case MRM_DEVICE_STATUS_UNKNOWN:
-        gtk_label_set_text (GTK_LABEL (status), "Unknown status");
-        gtk_widget_set_sensitive (row, FALSE);
-        break;
-    case MRM_DEVICE_STATUS_READY:
-        gtk_label_set_text (GTK_LABEL (status), "Ready");
-        break;
-    case MRM_DEVICE_STATUS_SIM_PIN_LOCKED:
-        gtk_label_set_text (GTK_LABEL (status), "PIN required");
-        break;
-    case MRM_DEVICE_STATUS_SIM_PUK_LOCKED:
-        gtk_label_set_text (GTK_LABEL (status), "PUK required");
-        gtk_widget_set_sensitive (row, FALSE);
-        break;
-    case MRM_DEVICE_STATUS_SIM_ERROR:
-        gtk_label_set_text (GTK_LABEL (status), "SIM error");
-        gtk_widget_set_sensitive (row, FALSE);
-        break;
-    }
+    g_signal_connect (device,
+                      "notify::status",
+                      G_CALLBACK (update_row_sensitivity),
+                      row);
+    update_row_sensitivity (device, NULL, row);
+
+    g_signal_connect (device,
+                      "notify::status",
+                      G_CALLBACK (update_modem_status_label_text),
+                      status);
+    update_modem_status_label_text (device, NULL, status);
 
     gtk_widget_show_all (row);
 
