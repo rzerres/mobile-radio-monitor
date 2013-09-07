@@ -27,7 +27,7 @@
 #define N_HORIZONTAL_SEPARATORS 6
 
 /* Width of the graph frame */
-#define FRAME_WIDTH 4
+#define FRAME_WIDTH 2
 
 /* Indentation of the actual graph within the drawing area */
 #define INDENT 24.0
@@ -85,7 +85,7 @@ struct _MrmGraphPrivate {
     guint draw_height;
 
     /* The background surface */
-    cairo_surface_t *background;
+    cairo_pattern_t *background;
 
     /* Useful coordinates updated whenever background is changed */
     gdouble plot_area_offset_x0;
@@ -200,12 +200,12 @@ graph_background_clear (MrmGraph *self)
     if (!self->priv->background)
         return;
 
-    cairo_surface_destroy (self->priv->background);
+    cairo_pattern_destroy (self->priv->background);
     self->priv->background = NULL;
 }
 
-static void
-graph_background_draw (MrmGraph *self)
+static
+graph_background_pattern_create (MrmGraph *self)
 {
     GtkAllocation allocation;
     cairo_t *cr;
@@ -216,14 +216,15 @@ graph_background_draw (MrmGraph *self)
     gdouble dash[2] = { 1.0, 2.0 };
     guint i;
     guint vertical_separator_relative_height;
+    cairo_surface_t *background;
 
     /* Create surface ad cairo context */
     gtk_widget_get_allocation (self->priv->drawing_area, &allocation);
-    self->priv->background = gdk_window_create_similar_surface (gtk_widget_get_window (self->priv->drawing_area),
-                                                                CAIRO_CONTENT_COLOR_ALPHA,
-                                                                allocation.width,
-                                                                allocation.height);
-    cr = cairo_create (self->priv->background);
+    background = gdk_window_create_similar_surface (gtk_widget_get_window (self->priv->drawing_area),
+                                                    CAIRO_CONTENT_COLOR_ALPHA,
+                                                    allocation.width,
+                                                    allocation.height);
+    cr = cairo_create (background);
 
     /* Setup foreground color from style context */
     context = gtk_widget_get_style_context (self->priv->drawing_area);
@@ -329,6 +330,9 @@ graph_background_draw (MrmGraph *self)
 
     cairo_destroy (cr);
     g_object_unref (layout);
+
+    self->priv->background = cairo_pattern_create_for_surface (background);
+    cairo_surface_destroy (background);
 }
 
 /*****************************************************************************/
@@ -370,16 +374,15 @@ graph_draw (GtkWidget *widget,
 
     window = gtk_widget_get_window (self->priv->drawing_area);
 
-    if (!self->priv->background) {
-        cairo_pattern_t *pattern;
-
-        graph_background_draw (self);
-        pattern = cairo_pattern_create_for_surface (self->priv->background);
-        gdk_window_set_background_pattern (window, pattern);
-        cairo_pattern_destroy (pattern);
-    }
+    if (!self->priv->background)
+        graph_background_pattern_create (self);
 
     cr = gdk_cairo_create (window);
+    cairo_set_source (cr, self->priv->background);
+    cairo_rectangle (cr,
+                     0, 0,
+                     self->priv->draw_width, self->priv->draw_height);
+    cairo_fill (cr);
     cairo_set_line_width (cr, 1);
     cairo_set_line_cap (cr, CAIRO_LINE_CAP_ROUND);
     cairo_set_line_join (cr, CAIRO_LINE_JOIN_ROUND);
