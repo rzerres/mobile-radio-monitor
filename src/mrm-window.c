@@ -19,6 +19,7 @@
 
 #include "mrm-window.h"
 #include "mrm-device.h"
+#include "mrm-graph.h"
 
 #define NOTEBOOK_TAB_DEVICE_LIST 0
 #define NOTEBOOK_TAB_SIGNAL_INFO 1
@@ -39,6 +40,11 @@ struct _MrmWindowPrivate {
     GtkWidget *pin_entry;
     GtkWidget *attempts_label;
     GtkWidget *pin_check_spinner_box;
+
+    /* Signal info tab */
+    MrmDevice *current;
+    GtkWidget *rssi_graph;
+    guint rssi_graph_updated_id;
 
     guint initial_scan_done_id;
     guint device_detection_id;
@@ -86,6 +92,39 @@ select_device_list_tab (MrmWindow *self)
     gtk_header_bar_set_title (GTK_HEADER_BAR (self->priv->header_bar), "Mobile Radio Monitor");
     gtk_widget_set_sensitive (self->priv->back_button, FALSE);
     gtk_notebook_set_current_page (GTK_NOTEBOOK (self->priv->notebook), NOTEBOOK_TAB_DEVICE_LIST);
+
+    if (self->priv->rssi_graph_updated_id) {
+        g_signal_handler_disconnect (self->priv->current, self->priv->rssi_graph_updated_id);
+        self->priv->rssi_graph_updated_id = 0;
+    }
+
+    g_clear_object (&self->priv->current);
+}
+
+typedef enum {
+    SERIES_GSM  = 0,
+    SERIES_UMTS = 1,
+    SERIES_LTE  = 2,
+    SERIES_CDMA = 3,
+    SERIES_EVDO = 4,
+} Series;
+
+static void
+rssi_updated (MrmDevice *device,
+              gdouble gsm_rssi,
+              gdouble umts_rssi,
+              gdouble lte_rssi,
+              gdouble cdma_rssi,
+              gdouble evdo_rssi,
+              MrmWindow *self)
+{
+    mrm_graph_step_init (MRM_GRAPH (self->priv->rssi_graph));
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rssi_graph), SERIES_GSM,  gsm_rssi);
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rssi_graph), SERIES_UMTS, umts_rssi);
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rssi_graph), SERIES_LTE,  lte_rssi);
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rssi_graph), SERIES_CDMA, cdma_rssi);
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rssi_graph), SERIES_EVDO, evdo_rssi);
+    mrm_graph_step_finish (MRM_GRAPH (self->priv->rssi_graph));
 }
 
 static void
@@ -99,6 +138,22 @@ select_signal_info_tab (MrmWindow *self,
     g_free (title);
     gtk_widget_set_sensitive (self->priv->back_button, TRUE);
     gtk_notebook_set_current_page (GTK_NOTEBOOK (self->priv->notebook), NOTEBOOK_TAB_SIGNAL_INFO);
+
+    /* Keep a ref to current device */
+    self->priv->current = g_object_ref (device);
+
+    /* Define series */
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_GSM,  "GSM",  0, 208, 0);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_UMTS, "UMTS", 208, 0, 0);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_LTE,  "LTE",  0, 0, 208);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_CDMA, "CDMA", 150, 150, 150);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_EVDO, "EVDO", 255, 255, 255);
+
+    /* Get updates */
+    self->priv->rssi_graph_updated_id = g_signal_connect (device,
+                                                          "rssi-updated",
+                                                          G_CALLBACK (rssi_updated),
+                                                          self);
 }
 
 /******************************************************************************/
@@ -109,7 +164,8 @@ mrm_window_open_device (MrmWindow *self,
 {
     select_signal_info_tab (self, device);
 
-    /* TODO: more */
+    /* Start NAS monitoring */
+    mrm_device_start_nas (device, NULL, NULL);
 }
 
 /******************************************************************************/
@@ -467,6 +523,8 @@ static void
 back_button_clicked (GtkButton *button,
                      MrmWindow *self)
 {
+    /* Stop NAS monitoring */
+    mrm_device_stop_nas (self->priv->current, NULL, NULL);
     select_device_list_tab (self);
 }
 
@@ -490,6 +548,9 @@ static void
 mrm_window_init (MrmWindow *self)
 {
     self->priv = mrm_window_get_instance_private (self);
+
+    /* Ensure we register the MrmGraph before initiating template */
+    mrm_graph_get_type ();
 
     gtk_widget_init_template (GTK_WIDGET (self));
 
@@ -578,4 +639,5 @@ mrm_window_class_init (MrmWindowClass *klass)
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, pin_entry);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, attempts_label);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, pin_check_spinner_box);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, rssi_graph);
 }

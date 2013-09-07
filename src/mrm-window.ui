@@ -312,7 +312,39 @@
           <object class="GtkBox" id="graph_box">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="hexpand">True</property>
+            <property name="vexpand">True</property>
             <property name="orientation">vertical</property>
+            <child>
+              <object class="MrmGraph" id="rssi_graph">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="y-max">-49.0</property>
+                <property name="y-min">-113.0</property>
+                <property name="y-n-separators">4</property>
+                <property name="y-units">dBm</property>
+                <property name="n-series">5</property>
+                <property name="hexpand">True</property>
+                <property name="vexpand">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="kaka">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Signal information</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
           </object>
         </child>
         <child type="tab">
