@@ -112,6 +112,16 @@ free_series (MrmGraph *self)
 }
 
 static void
+clear_series (MrmGraph *self,
+              guint series_index)
+{
+    guint i;
+
+    for (i = 0; i < NUM_POINTS; i++)
+        self->priv->series[series_index].data[i] = -G_MAXDOUBLE;
+}
+
+static void
 allocate_series (MrmGraph *self)
 {
     guint i;
@@ -120,12 +130,8 @@ allocate_series (MrmGraph *self)
         return;
 
     self->priv->series = g_new0 (Series, self->priv->n_series);
-    for (i = 0; i < self->priv->n_series; i++) {
-        guint j;
-
-        for (j = 0; j < NUM_POINTS; j++)
-            self->priv->series[i].data[j] = -G_MAXDOUBLE;
-    }
+    for (i = 0; i < self->priv->n_series; i++)
+        clear_series (self, i);
 }
 
 void
@@ -138,6 +144,7 @@ mrm_graph_setup_series (MrmGraph *self,
 {
     g_assert_cmpuint (series_index, <, self->priv->n_series);
 
+    clear_series (self, series_index);
     g_free (self->priv->series[series_index].label);
     self->priv->series[series_index].label = g_strdup (label);
     self->priv->series[series_index].color.red = color_red;
