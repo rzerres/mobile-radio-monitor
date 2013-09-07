@@ -476,25 +476,7 @@ mrm_graph_new (void)
     MrmGraph *self;
     GtkWidget *drawing_area;
 
-    self = MRM_GRAPH (g_object_new (MRM_TYPE_GRAPH,
-                                    "orientation", GTK_ORIENTATION_VERTICAL,
-                                    "spacing", 6,
-                                    NULL));
-
-    self->priv->drawing_area = gtk_drawing_area_new ();
-    gtk_widget_set_size_request (self->priv->drawing_area, 100, 100);
-    gtk_widget_set_events (self->priv->drawing_area, GDK_EXPOSURE_MASK);
-    g_signal_connect (G_OBJECT (self->priv->drawing_area),
-                      "draw",
-                      G_CALLBACK (graph_draw),
-                      self);
-    g_signal_connect (G_OBJECT (self->priv->drawing_area),
-                      "configure-event",
-                      G_CALLBACK (graph_configure),
-                      self);
-
-    gtk_box_pack_start (GTK_BOX (self), self->priv->drawing_area, TRUE, TRUE, 0);
-    gtk_widget_show (self->priv->drawing_area);
+    self = MRM_GRAPH (g_object_new (MRM_TYPE_GRAPH, NULL));
 
     return GTK_WIDGET (self);
 }
@@ -512,6 +494,35 @@ mrm_graph_init (MrmGraph *self)
     self->priv->y_max = 100.0;
     self->priv->y_units = g_strdup ("%");
     self->priv->y_n_separators = 5;
+}
+
+static void
+constructed (GObject *object)
+{
+    MrmGraph *self = MRM_GRAPH (object);
+
+    /* Additional property defaults */
+    g_object_set (object,
+                  "orientation", GTK_ORIENTATION_VERTICAL,
+                  "spacing",     6,
+                  NULL);
+
+    /* Initialize stuff */
+    self->priv->drawing_area = gtk_drawing_area_new ();
+    gtk_widget_set_events (self->priv->drawing_area, GDK_EXPOSURE_MASK);
+    g_signal_connect (G_OBJECT (self->priv->drawing_area),
+                      "draw",
+                      G_CALLBACK (graph_draw),
+                      self);
+    g_signal_connect (G_OBJECT (self->priv->drawing_area),
+                      "configure-event",
+                      G_CALLBACK (graph_configure),
+                      self);
+
+    gtk_box_pack_start (GTK_BOX (self), self->priv->drawing_area, TRUE, TRUE, 0);
+    gtk_widget_show (self->priv->drawing_area);
+
+    G_OBJECT_CLASS (mrm_graph_parent_class)->constructed (object);
 }
 
 static void
@@ -596,6 +607,7 @@ mrm_graph_class_init (MrmGraphClass *klass)
 
     g_type_class_add_private (object_class, sizeof (MrmGraphPrivate));
 
+    object_class->constructed = constructed;
     object_class->get_property = get_property;
     object_class->set_property = set_property;
     object_class->finalize = finalize;
