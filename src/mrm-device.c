@@ -33,6 +33,13 @@ enum {
 
 static GParamSpec *properties[PROP_LAST];
 
+enum {
+    SIGNAL_RSSI_UPDATED,
+    SIGNAL_LAST
+};
+
+static guint signals[SIGNAL_LAST] = { 0 };
+
 struct _MrmDevicePrivate {
     /* QMI device */
     GFile *file;
@@ -51,7 +58,71 @@ struct _MrmDevicePrivate {
     /* Clients */
     QmiClient *dms;
     QmiClient *nas;
+
+    /* Signal info updates handling */
+    guint signal_info_updated_id;
 };
+
+/*****************************************************************************/
+/* Reload signal info */
+
+static void
+qmi_client_nas_get_signal_info_ready (QmiClientNas *client,
+                                      GAsyncResult *res,
+                                      MrmDevice *self)
+{
+    QmiMessageNasGetSignalInfoOutput *output;
+    GError *error = NULL;
+    guint quality = 0;
+
+    output = qmi_client_nas_get_signal_info_finish (client, res, &error);
+    if (!output || !qmi_message_nas_get_signal_info_output_get_result (output, &error)) {
+        g_warning ("Error loading signal info: %s", error->message);
+        g_error_free (error);
+    } else {
+        gint8 gsm_rssi  = -113;
+        gint8 umts_rssi = -113;
+        gint8 lte_rssi  = -113;
+        gint8 cdma_rssi = -113;
+        gint8 evdo_rssi = -113;
+
+        /* RSSI */
+        if (qmi_message_nas_get_signal_info_output_get_gsm_signal_strength (output, &gsm_rssi, NULL))
+            gsm_rssi = CLAMP (gsm_rssi, -113, -51);
+        if (qmi_message_nas_get_signal_info_output_get_wcdma_signal_strength (output, &umts_rssi, NULL, NULL))
+            umts_rssi = CLAMP (umts_rssi, -113, -51);
+        if (qmi_message_nas_get_signal_info_output_get_lte_signal_strength (output, &lte_rssi, NULL, NULL, NULL, NULL))
+            lte_rssi = CLAMP (lte_rssi, -113, -51);
+        if (qmi_message_nas_get_signal_info_output_get_cdma_signal_strength (output, &cdma_rssi, NULL, NULL))
+            cdma_rssi = CLAMP (cdma_rssi, -113, -51);
+        if (qmi_message_nas_get_signal_info_output_get_hdr_signal_strength (output, &evdo_rssi, NULL, NULL, NULL, NULL))
+            evdo_rssi = CLAMP (evdo_rssi, -113, -51);
+
+        g_signal_emit (self,
+                       signals[SIGNAL_RSSI_UPDATED],
+                       0,
+                       (gdouble)gsm_rssi,
+                       (gdouble)umts_rssi,
+                       (gdouble)lte_rssi,
+                       (gdouble)cdma_rssi,
+                       (gdouble)evdo_rssi);
+    }
+
+    if (output)
+        qmi_message_nas_get_signal_info_output_unref (output);
+    g_object_unref (self);
+}
+
+static gboolean
+signal_info_reload_cb (MrmDevice *self)
+{
+    qmi_client_nas_get_signal_info (QMI_CLIENT_NAS (self->priv->nas),
+                                    NULL,
+                                    10,
+                                    NULL,
+                                    (GAsyncReadyCallback)qmi_client_nas_get_signal_info_ready,
+                                    g_object_ref (self));
+}
 
 /*****************************************************************************/
 /* Reload status */
@@ -275,21 +346,77 @@ mrm_device_unlock (MrmDevice *self,
 }
 
 /*****************************************************************************/
-/* Start NAS service monitoring */
+/* Stop NAS service monitoring */
 
-typedef struct {
-    MrmDevice *self;
-    GSimpleAsyncResult *result;
-} StartNasContext;
+gboolean
+mrm_device_stop_nas_finish (MrmDevice *self,
+                            GAsyncResult *res,
+                            GError **error)
+{
+    return !g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (res), error);
+}
 
 static void
-start_nas_context_complete_and_free (StartNasContext *ctx)
+qmi_device_release_client_nas_ready (QmiDevice *device,
+                                     GAsyncResult *res,
+                                     GSimpleAsyncResult *simple)
 {
-    g_simple_async_result_complete_in_idle (ctx->result);
-    g_object_unref (ctx->result);
-    g_object_unref (ctx->self);
-    g_slice_free (StartNasContext, ctx);
+    GError *error = NULL;
+    MrmDevice *self;
+
+    self = MRM_DEVICE (g_async_result_get_source_object (G_ASYNC_RESULT (simple)));
+
+    g_clear_object (&self->priv->nas);
+
+    if (!qmi_device_release_client_finish (device, res, &error)) {
+        g_prefix_error (&error, "Cannot release NAS client: ");
+        g_simple_async_result_take_error (simple, error);
+    } else {
+        g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+    }
+
+    g_simple_async_result_complete (simple);
+    g_object_unref (simple);
+    g_object_unref (self);
 }
+
+void
+mrm_device_stop_nas (MrmDevice *self,
+                     GAsyncReadyCallback callback,
+                     gpointer user_data)
+{
+    GSimpleAsyncResult *simple;
+
+    simple = g_simple_async_result_new (G_OBJECT (self),
+                                        callback,
+                                        user_data,
+                                        mrm_device_stop_nas);
+
+    /* If not started, error */
+    if (!self->priv->nas) {
+        g_simple_async_result_set_error (simple,
+                                         MRM_CORE_ERROR,
+                                         MRM_CORE_ERROR_FAILED,
+                                         "NAS service already stopped");
+        g_simple_async_result_complete_in_idle (simple);
+        g_object_unref (simple);
+        return;
+    }
+
+    g_source_remove (self->priv->signal_info_updated_id);
+    self->priv->signal_info_updated_id = 0;
+
+    qmi_device_release_client (self->priv->qmi_device,
+                               self->priv->nas,
+                               QMI_DEVICE_RELEASE_CLIENT_FLAGS_RELEASE_CID,
+                               5,
+                               NULL,
+                               (GAsyncReadyCallback) qmi_device_release_client_nas_ready,
+                               simple);
+}
+
+/*****************************************************************************/
+/* Start NAS service monitoring */
 
 gboolean
 mrm_device_start_nas_finish (MrmDevice *self,
@@ -302,21 +429,29 @@ mrm_device_start_nas_finish (MrmDevice *self,
 static void
 qmi_device_allocate_client_nas_ready (QmiDevice *device,
                                       GAsyncResult *res,
-                                      StartNasContext *ctx)
+                                      GSimpleAsyncResult *simple)
 {
     GError *error = NULL;
-    QmiMessageNasRegisterIndicationsInput *input;
+    MrmDevice *self;
 
-    ctx->self->priv->nas = qmi_device_allocate_client_finish (device, res, &error);
-    if (!ctx->self->priv->nas) {
+    self = MRM_DEVICE (g_async_result_get_source_object (G_ASYNC_RESULT (simple)));
+
+    self->priv->nas = qmi_device_allocate_client_finish (device, res, &error);
+    if (!self->priv->nas) {
         g_prefix_error (&error, "Cannot allocate NAS client: ");
-        g_simple_async_result_take_error (ctx->result, error);
-        start_nas_context_complete_and_free (ctx);
-        return;
+        g_simple_async_result_take_error (simple, error);
+    } else {
+        /* Start signal info polling */
+        self->priv->signal_info_updated_id = g_timeout_add_seconds (1,
+                                                                    (GSourceFunc) signal_info_reload_cb,
+                                                                    self);
+        signal_info_reload_cb (self);
+        g_simple_async_result_set_op_res_gboolean (simple, TRUE);
     }
 
-    g_simple_async_result_set_op_res_gboolean (ctx->result, TRUE);
-    start_nas_context_complete_and_free (ctx);
+    g_simple_async_result_complete (simple);
+    g_object_unref (simple);
+    g_object_unref (self);
 }
 
 void
@@ -324,22 +459,21 @@ mrm_device_start_nas (MrmDevice *self,
                       GAsyncReadyCallback callback,
                       gpointer user_data)
 {
-    StartNasContext *ctx;
+    GSimpleAsyncResult *simple;
 
-    ctx = g_slice_new (StartNasContext);
-    ctx->self = g_object_ref (self);
-    ctx->result = g_simple_async_result_new (G_OBJECT (self),
-                                             callback,
-                                             user_data,
-                                             mrm_device_start_nas);
+    simple = g_simple_async_result_new (G_OBJECT (self),
+                                        callback,
+                                        user_data,
+                                        mrm_device_start_nas);
 
     /* If already started, error */
     if (self->priv->nas) {
-        g_simple_async_result_set_error (ctx->result,
+        g_simple_async_result_set_error (simple,
                                          MRM_CORE_ERROR,
                                          MRM_CORE_ERROR_FAILED,
                                          "NAS service already started");
-        start_nas_context_complete_and_free (ctx);
+        g_simple_async_result_complete_in_idle (simple);
+        g_object_unref (simple);
         return;
     }
 
@@ -349,7 +483,7 @@ mrm_device_start_nas (MrmDevice *self,
                                 5,
                                 NULL,
                                 (GAsyncReadyCallback) qmi_device_allocate_client_nas_ready,
-                                ctx);
+                                simple);
 }
 
 /*****************************************************************************/
@@ -836,4 +970,19 @@ mrm_device_class_init (MrmDeviceClass *klass)
                            MRM_DEVICE_STATUS_UNKNOWN,
                            G_PARAM_READABLE);
     g_object_class_install_property (object_class, PROP_STATUS, properties[PROP_STATUS]);
+
+    signals[SIGNAL_RSSI_UPDATED] =
+        g_signal_new ("rssi-updated",
+                      G_OBJECT_CLASS_TYPE (object_class),
+                      G_SIGNAL_RUN_FIRST,
+                      G_STRUCT_OFFSET (MrmDeviceClass, rssi_updated),
+                      NULL, NULL,
+                      g_cclosure_marshal_generic,
+					  G_TYPE_NONE,
+                      5,
+                      G_TYPE_DOUBLE,
+                      G_TYPE_DOUBLE,
+                      G_TYPE_DOUBLE,
+                      G_TYPE_DOUBLE,
+                      G_TYPE_DOUBLE);
 }

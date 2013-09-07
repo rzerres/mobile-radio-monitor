@@ -47,6 +47,14 @@ struct _MrmDevice {
 
 struct _MrmDeviceClass {
     GObjectClass parent_class;
+
+    /* Signals */
+    void (*rssi_updated) (MrmDevice *device,
+                          gdouble gsm_rssi,
+                          gdouble umts_rssi,
+                          gdouble lte_rssi,
+                          gdouble cdma_rssi,
+                          gdouble evdo_rssi);
 };
 
 GType mrm_device_get_type (void) G_GNUC_CONST;
@@ -73,6 +81,20 @@ void     mrm_device_unlock        (MrmDevice *self,
 gboolean mrm_device_unlock_finish (MrmDevice *self,
                                    GAsyncResult *res,
                                    GError **error);
+
+void     mrm_device_start_nas        (MrmDevice *self,
+                                      GAsyncReadyCallback callback,
+                                      gpointer user_data);
+gboolean mrm_device_start_nas_finish (MrmDevice *self,
+                                      GAsyncResult *res,
+                                      GError **error);
+
+void     mrm_device_stop_nas        (MrmDevice *self,
+                                     GAsyncReadyCallback callback,
+                                     gpointer user_data);
+gboolean mrm_device_stop_nas_finish (MrmDevice *self,
+                                     GAsyncResult *res,
+                                     GError **error);
 
 G_END_DECLS
 
