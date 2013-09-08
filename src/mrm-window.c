@@ -97,12 +97,12 @@ select_device_list_tab (MrmWindow *self)
 }
 
 typedef enum {
-    SERIES_GSM  = 0,
-    SERIES_UMTS = 1,
-    SERIES_LTE  = 2,
-    SERIES_CDMA = 3,
-    SERIES_EVDO = 4,
-} Series;
+    SERIES_RSSI_GSM  = 0,
+    SERIES_RSSI_UMTS = 1,
+    SERIES_RSSI_LTE  = 2,
+    SERIES_RSSI_CDMA = 3,
+    SERIES_RSSI_EVDO = 4,
+} SeriesRssi;
 
 static void
 rssi_updated (MrmDevice *device,
@@ -114,13 +114,19 @@ rssi_updated (MrmDevice *device,
               MrmWindow *self)
 {
     mrm_graph_step_init (MRM_GRAPH (self->priv->rssi_graph));
-    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rssi_graph), SERIES_GSM,  gsm_rssi);
-    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rssi_graph), SERIES_UMTS, umts_rssi);
-    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rssi_graph), SERIES_LTE,  lte_rssi);
-    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rssi_graph), SERIES_CDMA, cdma_rssi);
-    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rssi_graph), SERIES_EVDO, evdo_rssi);
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_GSM,  gsm_rssi);
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_UMTS, umts_rssi);
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_LTE,  lte_rssi);
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_CDMA, cdma_rssi);
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_EVDO, evdo_rssi);
     mrm_graph_step_finish (MRM_GRAPH (self->priv->rssi_graph));
 }
+
+typedef enum {
+    SERIES_ECIO_UMTS = 0,
+    SERIES_ECIO_CDMA = 1,
+    SERIES_ECIO_EVDO = 2,
+} SeriesEcio;
 
 static void
 ecio_updated (MrmDevice *device,
@@ -130,9 +136,9 @@ ecio_updated (MrmDevice *device,
               MrmWindow *self)
 {
     mrm_graph_step_init (MRM_GRAPH (self->priv->ecio_graph));
-    mrm_graph_step_set_value (MRM_GRAPH (self->priv->ecio_graph), SERIES_UMTS, umts_ecio);
-    mrm_graph_step_set_value (MRM_GRAPH (self->priv->ecio_graph), SERIES_CDMA, cdma_ecio);
-    mrm_graph_step_set_value (MRM_GRAPH (self->priv->ecio_graph), SERIES_EVDO, evdo_ecio);
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->ecio_graph), SERIES_ECIO_UMTS, umts_ecio);
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->ecio_graph), SERIES_ECIO_CDMA, cdma_ecio);
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->ecio_graph), SERIES_ECIO_EVDO, evdo_ecio);
     mrm_graph_step_finish (MRM_GRAPH (self->priv->ecio_graph));
 }
 
@@ -611,17 +617,17 @@ mrm_window_init (MrmWindow *self)
     gtk_widget_hide (self->priv->device_list_frame);
 
     /* RSSI graph */
-    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_GSM,  "GSM",  0, 208, 0);
-    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_UMTS, "UMTS", 208, 0, 0);
-    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_LTE,  "LTE",  0, 0, 208);
-    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_CDMA, "CDMA", 150, 150, 150);
-    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_EVDO, "EVDO", 255, 255, 255);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_GSM,  "GSM",  0, 208, 0);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_UMTS, "UMTS", 208, 0, 0);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_LTE,  "LTE",  0, 0, 208);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_CDMA, "CDMA", 150, 150, 150);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_EVDO, "EVDO", 255, 255, 255);
 
 
     /* ECIO graph */
-    mrm_graph_setup_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_UMTS, "UMTS", 208, 0, 0);
-    mrm_graph_setup_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_CDMA, "CDMA", 150, 150, 150);
-    mrm_graph_setup_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_EVDO, "EVDO", 255, 255, 255);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_ECIO_UMTS, "UMTS", 208, 0, 0);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_ECIO_CDMA, "CDMA", 150, 150, 150);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_ECIO_EVDO, "EVDO", 255, 255, 255);
 }
 
 static void
