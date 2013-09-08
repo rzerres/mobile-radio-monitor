@@ -162,18 +162,18 @@ void
 mrm_graph_setup_series (MrmGraph *self,
                         guint series_index,
                         const gchar *label,
-                        gdouble color_red,
-                        gdouble color_green,
-                        gdouble color_blue)
+                        guint8 color_red,
+                        guint8 color_green,
+                        guint8 color_blue)
 {
     g_assert_cmpuint (series_index, <, self->priv->n_series);
 
     clear_series (self, series_index);
 
     self->priv->series[series_index].text = g_strdup (label);
-    self->priv->series[series_index].color.red = color_red;
-    self->priv->series[series_index].color.green = color_green;
-    self->priv->series[series_index].color.blue = color_blue;
+    self->priv->series[series_index].color.red = ((gdouble)color_red) / 255.0;
+    self->priv->series[series_index].color.green = ((gdouble)color_green) / 255.0;
+    self->priv->series[series_index].color.blue = ((gdouble)color_blue) / 255.0;
     self->priv->series[series_index].color.alpha = 1.0;
 
     self->priv->series[series_index].box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 8);

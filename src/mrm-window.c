@@ -616,18 +616,24 @@ mrm_window_init (MrmWindow *self)
     gtk_widget_show (self->priv->device_list_label);
     gtk_widget_hide (self->priv->device_list_frame);
 
+#define GSM_RGB  76,  153, 0   /* green */
+#define UMTS_RGB 204, 0,   0   /* red */
+#define LTE_RGB  0,   76,  153 /* blue */
+#define CDMA_RGB 153, 153, 0   /* yellow */
+#define EVDO_RGB 153, 0,   153 /* purple */
+
     /* RSSI graph */
-    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_GSM,  "GSM",  0, 208, 0);
-    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_UMTS, "UMTS", 208, 0, 0);
-    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_LTE,  "LTE",  0, 0, 208);
-    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_CDMA, "CDMA", 150, 150, 150);
-    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_EVDO, "EVDO", 255, 255, 255);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_GSM,  "GSM",  GSM_RGB);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_UMTS, "UMTS", UMTS_RGB);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_LTE,  "LTE",  LTE_RGB);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_CDMA, "CDMA", CDMA_RGB);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_EVDO, "EVDO", EVDO_RGB);
 
 
     /* ECIO graph */
-    mrm_graph_setup_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_ECIO_UMTS, "UMTS", 208, 0, 0);
-    mrm_graph_setup_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_ECIO_CDMA, "CDMA", 150, 150, 150);
-    mrm_graph_setup_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_ECIO_EVDO, "EVDO", 255, 255, 255);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_ECIO_UMTS, "UMTS", UMTS_RGB);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_ECIO_CDMA, "CDMA", CDMA_RGB);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_ECIO_EVDO, "EVDO", EVDO_RGB);
 }
 
 static void

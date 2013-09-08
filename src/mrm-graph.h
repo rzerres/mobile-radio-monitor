@@ -55,9 +55,9 @@ GtkWidget *mrm_graph_new (void);
 void mrm_graph_setup_series (MrmGraph *self,
                              guint series_index,
                              const gchar *label,
-                             gdouble color_red,
-                             gdouble color_green,
-                             gdouble color_blue);
+                             guint8 color_red,
+                             guint8 color_green,
+                             guint8 color_blue);
 
 void mrm_graph_step_init      (MrmGraph *self);
 void mrm_graph_step_set_value (MrmGraph *self,
