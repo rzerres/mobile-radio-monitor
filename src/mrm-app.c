@@ -43,6 +43,9 @@ struct _MrmAppPrivate {
 
     /* List of MrmDevices */
     GList *devices;
+
+    /* Shutdown inner loop */
+    GMainLoop *shutdown_loop;
 };
 
 /******************************************************************************/
@@ -130,6 +133,8 @@ pending_device_info_add (MrmApp *self,
 
 /******************************************************************************/
 
+static void shutdown_loop_check_completed (MrmApp *self);
+
 typedef struct {
     MrmApp *self;
     GFile *file;
@@ -175,6 +180,10 @@ device_new_ready (GObject *source,
         ctx->self->priv->initial_scan_done = TRUE;
         g_signal_emit (ctx->self, signals[SIGNAL_INITIAL_SCAN_DONE], 0);
     }
+
+    /* If we got the last pending device info done, and no more devices available,
+     * complete shutdown if we are in the middle of a shutdown process */
+    shutdown_loop_check_completed (ctx->self);
 
     port_added_context_free (ctx);
 }
@@ -425,6 +434,58 @@ startup (GApplication *application)
 
 /******************************************************************************/
 
+static void
+shutdown_loop_check_completed (MrmApp *self)
+{
+    if (!self->priv->shutdown_loop)
+        return;
+
+    /* Whenever the last device has been closed, quit the inner loop */
+    if (!self->priv->devices && !self->priv->pending_devices)
+        g_main_loop_quit (self->priv->shutdown_loop);
+}
+
+static void
+device_close_ready (MrmDevice *device,
+                    GAsyncResult *res,
+                    MrmApp *self)
+{
+    mrm_device_close_finish (device, res, NULL);
+
+    /* Remove from app list once closed */
+    self->priv->devices = g_list_remove (self->priv->devices, device);
+    g_object_unref (device);
+
+    shutdown_loop_check_completed (self);
+}
+
+static void
+shutdown (GApplication *application)
+{
+    MrmApp *self = MRM_APP (application);
+    GList *l;
+
+    self->priv->shutdown_loop = g_main_loop_new (NULL, FALSE);
+
+    for (l = self->priv->pending_devices; l; l = g_list_next (l))
+        pending_device_info_cancel (self, ((PendingDeviceInfo *)l->data)->device_name);
+
+    for (l = self->priv->devices; l; l = g_list_next (l))
+        mrm_device_close (MRM_DEVICE (l->data),
+                          NULL,
+                          (GAsyncReadyCallback) device_close_ready,
+                          self);
+
+    g_main_loop_run (self->priv->shutdown_loop);
+    g_main_loop_unref (self->priv->shutdown_loop);
+    self->priv->shutdown_loop = NULL;
+
+    /* Chain up parent's shutdown */
+    G_APPLICATION_CLASS (mrm_app_parent_class)->shutdown (application);
+}
+
+/******************************************************************************/
+
 MrmApp *
 mrm_app_new (void)
 {
@@ -483,6 +544,7 @@ mrm_app_class_init (MrmAppClass *klass)
 
     application_class->startup = startup;
     application_class->activate = activate;
+    application_class->shutdown = shutdown;
 
     signals[SIGNAL_DEVICE_DETECTION] =
         g_signal_new ("device-detection",
