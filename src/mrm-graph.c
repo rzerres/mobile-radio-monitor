@@ -17,6 +17,7 @@
 
 
 #include "mrm-graph.h"
+#include "mrm-color-icon.h"
 
 #include <math.h>
 
@@ -58,9 +59,13 @@ enum {
 static GParamSpec *properties[PROP_LAST];
 
 typedef struct {
-    gchar *label;
+    gchar *text;
     GdkRGBA color;
     gdouble data[NUM_POINTS];
+    GtkWidget *box;
+    GtkWidget *box_icon;
+    GtkWidget *box_label;
+    GtkWidget *box_value;
 } Series;
 
 struct _MrmGraphPrivate {
@@ -83,6 +88,9 @@ struct _MrmGraphPrivate {
 
     /* The drawing area */
     GtkWidget *drawing_area;
+
+    /* Legend box */
+    GtkWidget *legend_box;
 
     /* Actual width and height available for drawing in the widget,
      * changes whenever the widget allocation size changes */
@@ -111,7 +119,7 @@ free_series (MrmGraph *self)
         return;
 
     for (i = 0; i < self->priv->n_series; i++)
-        g_free (self->priv->series[i].label);
+        g_free (self->priv->series[i].text);
     g_free (self->priv->series);
     self->priv->series = NULL;
 }
@@ -124,6 +132,17 @@ clear_series (MrmGraph *self,
 
     for (i = 0; i < NUM_POINTS; i++)
         self->priv->series[series_index].data[i] = -G_MAXDOUBLE;
+
+    g_free (self->priv->series[series_index].text);
+
+    if (self->priv->series[series_index].box) {
+        gtk_container_remove (GTK_CONTAINER (self->priv->legend_box),
+                              self->priv->series[series_index].box);
+        self->priv->series[series_index].box = NULL;
+        self->priv->series[series_index].box_icon = NULL;
+        self->priv->series[series_index].box_label = NULL;
+        self->priv->series[series_index].box_value = NULL;
+    }
 }
 
 static void
@@ -150,12 +169,28 @@ mrm_graph_setup_series (MrmGraph *self,
     g_assert_cmpuint (series_index, <, self->priv->n_series);
 
     clear_series (self, series_index);
-    g_free (self->priv->series[series_index].label);
-    self->priv->series[series_index].label = g_strdup (label);
+
+    self->priv->series[series_index].text = g_strdup (label);
     self->priv->series[series_index].color.red = color_red;
     self->priv->series[series_index].color.green = color_green;
     self->priv->series[series_index].color.blue = color_blue;
     self->priv->series[series_index].color.alpha = 1.0;
+
+    self->priv->series[series_index].box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_box_pack_start (GTK_BOX (self->priv->legend_box), self->priv->series[series_index].box, TRUE, TRUE, 0);
+    gtk_widget_show (self->priv->series[series_index].box);
+
+    self->priv->series[series_index].box_icon = mrm_color_icon_new (&self->priv->series[series_index].color);
+    gtk_box_pack_start (GTK_BOX (self->priv->series[series_index].box), self->priv->series[series_index].box_icon, FALSE, TRUE, 0);
+    gtk_widget_show (self->priv->series[series_index].box_icon);
+
+    self->priv->series[series_index].box_label = gtk_label_new (label);
+    gtk_box_pack_start (GTK_BOX (self->priv->series[series_index].box), self->priv->series[series_index].box_label, FALSE, TRUE, 0);
+    gtk_widget_show (self->priv->series[series_index].box_label);
+
+    self->priv->series[series_index].box_value = gtk_label_new ("N/A");
+    gtk_box_pack_start (GTK_BOX (self->priv->series[series_index].box), self->priv->series[series_index].box_value, FALSE, TRUE, 0);
+    gtk_widget_show (self->priv->series[series_index].box_value);
 }
 
 /*****************************************************************************/
@@ -526,16 +561,17 @@ constructed (GObject *object)
 
     /* Additional property defaults */
     g_object_set (object,
-                  "orientation", GTK_ORIENTATION_VERTICAL,
-                  "spacing",     6,
+                  "orientation",   GTK_ORIENTATION_VERTICAL,
+                  "spacing",       6,
+                  "margin-left",   8,
+                  "margin-right",  8,
+                  "margin-top",    8,
+                  "margin-bottom", 8,
                   NULL);
 
     /* Setup title */
     self->priv->title_label = gtk_label_new ("");
     gtk_widget_set_halign (self->priv->title_label, GTK_ALIGN_START);
-    gtk_widget_set_margin_left (self->priv->title_label, 8);
-    gtk_widget_set_margin_top (self->priv->title_label, 8);
-    gtk_widget_set_margin_bottom (self->priv->title_label, 4);
     gtk_box_pack_start (GTK_BOX (self), self->priv->title_label, FALSE, TRUE, 0);
     gtk_widget_show (self->priv->title_label);
     update_graph_title (self);
@@ -551,11 +587,20 @@ constructed (GObject *object)
                       "configure-event",
                       G_CALLBACK (graph_configure),
                       self);
-    gtk_widget_set_margin_left (self->priv->drawing_area, 16);
-    gtk_widget_set_margin_right (self->priv->drawing_area, 8);
-    gtk_widget_set_margin_bottom (self->priv->drawing_area, 8);
+    gtk_widget_set_margin_left (self->priv->drawing_area, 8);
+    gtk_widget_set_margin_top (self->priv->drawing_area, 4);
+    gtk_widget_set_margin_bottom (self->priv->drawing_area, 4);
     gtk_box_pack_start (GTK_BOX (self), self->priv->drawing_area, TRUE, TRUE, 0);
     gtk_widget_show (self->priv->drawing_area);
+
+    /* Legend box */
+    self->priv->legend_box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_widget_set_hexpand (self->priv->legend_box, TRUE);
+    gtk_widget_set_margin_left (self->priv->legend_box, 16);
+    gtk_widget_set_margin_top (self->priv->legend_box, 4);
+    gtk_widget_set_margin_bottom (self->priv->legend_box, 8);
+    gtk_box_pack_start (GTK_BOX (self), self->priv->legend_box, FALSE, TRUE, 0);
+    gtk_widget_show (self->priv->legend_box);
 
     G_OBJECT_CLASS (mrm_graph_parent_class)->constructed (object);
 }
