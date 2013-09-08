@@ -45,6 +45,8 @@ struct _MrmWindowPrivate {
     MrmDevice *current;
     GtkWidget *rssi_graph;
     guint rssi_graph_updated_id;
+    GtkWidget *ecio_graph;
+    guint ecio_graph_updated_id;
 
     guint initial_scan_done_id;
     guint device_detection_id;
@@ -98,6 +100,11 @@ select_device_list_tab (MrmWindow *self)
         self->priv->rssi_graph_updated_id = 0;
     }
 
+    if (self->priv->ecio_graph_updated_id) {
+        g_signal_handler_disconnect (self->priv->current, self->priv->ecio_graph_updated_id);
+        self->priv->ecio_graph_updated_id = 0;
+    }
+
     g_clear_object (&self->priv->current);
 }
 
@@ -128,6 +135,20 @@ rssi_updated (MrmDevice *device,
 }
 
 static void
+ecio_updated (MrmDevice *device,
+              gdouble umts_ecio,
+              gdouble cdma_ecio,
+              gdouble evdo_ecio,
+              MrmWindow *self)
+{
+    mrm_graph_step_init (MRM_GRAPH (self->priv->ecio_graph));
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->ecio_graph), SERIES_UMTS, umts_ecio);
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->ecio_graph), SERIES_CDMA, cdma_ecio);
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->ecio_graph), SERIES_EVDO, evdo_ecio);
+    mrm_graph_step_finish (MRM_GRAPH (self->priv->ecio_graph));
+}
+
+static void
 select_signal_info_tab (MrmWindow *self,
                         MrmDevice *device)
 {
@@ -142,17 +163,24 @@ select_signal_info_tab (MrmWindow *self,
     /* Keep a ref to current device */
     self->priv->current = g_object_ref (device);
 
-    /* Define series */
+    /* RSSI graph */
     mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_GSM,  "GSM",  0, 208, 0);
     mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_UMTS, "UMTS", 208, 0, 0);
     mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_LTE,  "LTE",  0, 0, 208);
     mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_CDMA, "CDMA", 150, 150, 150);
     mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_EVDO, "EVDO", 255, 255, 255);
-
-    /* Get updates */
     self->priv->rssi_graph_updated_id = g_signal_connect (device,
                                                           "rssi-updated",
                                                           G_CALLBACK (rssi_updated),
+                                                          self);
+
+    /* ECIO graph */
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_UMTS, "UMTS", 208, 0, 0);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_CDMA, "CDMA", 150, 150, 150);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_EVDO, "EVDO", 255, 255, 255);
+    self->priv->ecio_graph_updated_id = g_signal_connect (device,
+                                                          "ecio-updated",
+                                                          G_CALLBACK (ecio_updated),
                                                           self);
 }
 
@@ -640,4 +668,5 @@ mrm_window_class_init (MrmWindowClass *klass)
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, attempts_label);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, pin_check_spinner_box);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, rssi_graph);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, ecio_graph);
 }
