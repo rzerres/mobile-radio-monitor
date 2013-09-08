@@ -81,26 +81,21 @@ qmi_client_nas_get_signal_info_ready (QmiClientNas *client,
         g_warning ("Error loading signal info: %s", error->message);
         g_error_free (error);
     } else {
-        gint8 gsm_rssi  = -113;
-        gint8 umts_rssi = -113;
-        gint8 lte_rssi  = -113;
-        gint8 cdma_rssi = -113;
-        gint8 evdo_rssi = -113;
+        gint8 gsm_rssi  = -125;
+        gint8 umts_rssi = -125;
+        gint8 lte_rssi  = -125;
+        gint8 cdma_rssi = -125;
+        gint8 evdo_rssi = -125;
         gint16 umts_ecio = -1;
         gint16 cdma_ecio = -1;
         gint16 evdo_ecio = -1;
 
         /* Get signal info */
-        if (qmi_message_nas_get_signal_info_output_get_gsm_signal_strength (output, &gsm_rssi, NULL))
-            gsm_rssi = CLAMP (gsm_rssi, -113, -51);
-        if (qmi_message_nas_get_signal_info_output_get_wcdma_signal_strength (output, &umts_rssi, &umts_ecio, NULL))
-            umts_rssi = CLAMP (umts_rssi, -113, -51);
-        if (qmi_message_nas_get_signal_info_output_get_lte_signal_strength (output, &lte_rssi, NULL, NULL, NULL, NULL))
-            lte_rssi = CLAMP (lte_rssi, -113, -51);
-        if (qmi_message_nas_get_signal_info_output_get_cdma_signal_strength (output, &cdma_rssi, &cdma_ecio, NULL))
-            cdma_rssi = CLAMP (cdma_rssi, -113, -51);
-        if (qmi_message_nas_get_signal_info_output_get_hdr_signal_strength (output, &evdo_rssi, &evdo_ecio, NULL, NULL, NULL))
-            evdo_rssi = CLAMP (evdo_rssi, -113, -51);
+        qmi_message_nas_get_signal_info_output_get_gsm_signal_strength (output, &gsm_rssi, NULL);
+        qmi_message_nas_get_signal_info_output_get_wcdma_signal_strength (output, &umts_rssi, &umts_ecio, NULL);
+        qmi_message_nas_get_signal_info_output_get_lte_signal_strength (output, &lte_rssi, NULL, NULL, NULL, NULL);
+        qmi_message_nas_get_signal_info_output_get_cdma_signal_strength (output, &cdma_rssi, &cdma_ecio, NULL);
+        qmi_message_nas_get_signal_info_output_get_hdr_signal_strength (output, &evdo_rssi, &evdo_ecio, NULL, NULL, NULL);
 
         g_signal_emit (self,
                        signals[SIGNAL_RSSI_UPDATED],
