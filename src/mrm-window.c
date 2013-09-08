@@ -47,6 +47,8 @@ struct _MrmWindowPrivate {
     guint rssi_graph_updated_id;
     GtkWidget *ecio_graph;
     guint ecio_graph_updated_id;
+    GtkWidget *sinr_level_graph;
+    guint sinr_level_graph_updated_id;
 
     guint initial_scan_done_id;
     guint device_detection_id;
@@ -142,6 +144,20 @@ ecio_updated (MrmDevice *device,
     mrm_graph_step_finish (MRM_GRAPH (self->priv->ecio_graph));
 }
 
+typedef enum {
+    SERIES_SINR_LEVEL_EVDO = 0,
+} SeriesSinrLevel;
+
+static void
+sinr_level_updated (MrmDevice *device,
+                    gdouble evdo_sinr_level,
+                    MrmWindow *self)
+{
+    mrm_graph_step_init (MRM_GRAPH (self->priv->sinr_level_graph));
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->sinr_level_graph), SERIES_SINR_LEVEL_EVDO, evdo_sinr_level);
+    mrm_graph_step_finish (MRM_GRAPH (self->priv->sinr_level_graph));
+}
+
 static void
 change_current_device (MrmWindow *self,
                        MrmDevice *new_device)
@@ -164,6 +180,11 @@ change_current_device (MrmWindow *self,
             self->priv->ecio_graph_updated_id = 0;
         }
 
+        if (self->priv->sinr_level_graph_updated_id) {
+            g_signal_handler_disconnect (self->priv->current, self->priv->sinr_level_graph_updated_id);
+            self->priv->sinr_level_graph_updated_id = 0;
+        }
+
         g_clear_object (&self->priv->current);
 
         /* Clear graphs */
@@ -177,6 +198,8 @@ change_current_device (MrmWindow *self,
         mrm_graph_clear_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_ECIO_UMTS);
         mrm_graph_clear_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_ECIO_CDMA);
         mrm_graph_clear_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_ECIO_EVDO);
+
+        mrm_graph_clear_series (MRM_GRAPH (self->priv->sinr_level_graph), SERIES_SINR_LEVEL_EVDO);
     }
 
     if (new_device) {
@@ -190,6 +213,10 @@ change_current_device (MrmWindow *self,
                                                               "ecio-updated",
                                                               G_CALLBACK (ecio_updated),
                                                               self);
+        self->priv->sinr_level_graph_updated_id = g_signal_connect (new_device,
+                                                                    "sinr-level-updated",
+                                                                    G_CALLBACK (sinr_level_updated),
+                                                                    self);
     }
 }
 
@@ -659,6 +686,9 @@ mrm_window_init (MrmWindow *self)
     mrm_graph_setup_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_ECIO_UMTS, "UMTS", UMTS_RGB);
     mrm_graph_setup_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_ECIO_CDMA, "CDMA", CDMA_RGB);
     mrm_graph_setup_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_ECIO_EVDO, "EVDO", EVDO_RGB);
+
+    /* SINR level graph */
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->sinr_level_graph), SERIES_SINR_LEVEL_EVDO, "EVDO", EVDO_RGB);
 }
 
 static void
@@ -721,4 +751,5 @@ mrm_window_class_init (MrmWindowClass *klass)
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, pin_check_spinner_box);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, rssi_graph);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, ecio_graph);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, sinr_level_graph);
 }
