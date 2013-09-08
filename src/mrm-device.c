@@ -499,6 +499,93 @@ mrm_device_start_nas (MrmDevice *self,
 
 /*****************************************************************************/
 
+gboolean
+mrm_device_close_finish (MrmDevice *self,
+                         GAsyncResult *res,
+                         GError **error)
+{
+    return !g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (res), error);
+}
+
+static void device_close_step (MrmDevice *self,
+                               GSimpleAsyncResult *simple);
+static void
+close_release_dms (QmiDevice *device,
+                   GAsyncResult *res,
+                   GSimpleAsyncResult *simple)
+{
+    MrmDevice *self;
+
+    self = MRM_DEVICE (g_async_result_get_source_object (G_ASYNC_RESULT (simple)));
+
+    /* ignore errors */
+    qmi_device_release_client_finish (device, res, NULL);
+    g_clear_object (&self->priv->dms);
+
+    device_close_step (self, simple);
+
+    g_object_unref (self);
+}
+
+static void
+close_stop_nas (MrmDevice *self,
+                GAsyncResult *res,
+                GSimpleAsyncResult *simple)
+{
+    /* ignore errors */
+    mrm_device_stop_nas_finish (self, res, NULL);
+    g_assert (self->priv->nas == NULL);
+
+    device_close_step (self, simple);
+}
+
+static void
+device_close_step (MrmDevice *self,
+                   GSimpleAsyncResult *simple)
+{
+    /* Stop NAS and release client */
+    if (self->priv->nas) {
+        mrm_device_stop_nas (self,
+                             (GAsyncReadyCallback) close_stop_nas,
+                             simple);
+        return;
+    }
+
+    /* Release DMS client */
+    if (self->priv->dms) {
+        qmi_device_release_client (self->priv->qmi_device,
+                                   self->priv->dms,
+                                   QMI_DEVICE_RELEASE_CLIENT_FLAGS_RELEASE_CID,
+                                   5,
+                                   NULL,
+                                   (GAsyncReadyCallback) close_release_dms,
+                                   simple);
+        return;
+    }
+
+    g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+    g_simple_async_result_complete_in_idle (simple);
+    g_object_unref (simple);
+}
+
+void
+mrm_device_close (MrmDevice *self,
+                  GCancellable *cancellable,
+                  GAsyncReadyCallback callback,
+                  gpointer user_data)
+{
+    GSimpleAsyncResult *simple;
+
+    simple = g_simple_async_result_new (G_OBJECT (self),
+                                        callback,
+                                        user_data,
+                                        mrm_device_close);
+
+    device_close_step (self, simple);
+}
+
+/*****************************************************************************/
+
 QmiDevice *
 mrm_device_peek_qmi_device (MrmDevice *self)
 {
@@ -907,6 +994,9 @@ dispose (GObject *object)
     }
 
     if (self->priv->nas) {
+        g_source_remove (self->priv->signal_info_updated_id);
+        self->priv->signal_info_updated_id = 0;
+
         qmi_device_release_client (self->priv->qmi_device,
                                    self->priv->nas,
                                    QMI_DEVICE_RELEASE_CLIENT_FLAGS_RELEASE_CID,

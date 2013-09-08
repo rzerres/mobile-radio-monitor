@@ -100,6 +100,14 @@ gboolean mrm_device_stop_nas_finish (MrmDevice *self,
                                      GAsyncResult *res,
                                      GError **error);
 
+void     mrm_device_close        (MrmDevice *self,
+                                  GCancellable *cancellable,
+                                  GAsyncReadyCallback callback,
+                                  gpointer user_data);
+gboolean mrm_device_close_finish (MrmDevice *self,
+                                  GAsyncResult *res,
+                                  GError **error);
+
 G_END_DECLS
 
 #endif /* __MRM_DEVICE_H__ */
