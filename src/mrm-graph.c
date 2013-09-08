@@ -216,6 +216,19 @@ mrm_graph_step_set_value (MrmGraph *self,
 
     self->priv->series[series_index].data[self->priv->step_index] =
         CLAMP (value, self->priv->y_min, self->priv->y_max);
+
+    if (value < self->priv->y_min ||
+        value > self->priv->y_max)
+        gtk_label_set_text (GTK_LABEL (self->priv->series[series_index].box_value), "N/A");
+    else {
+        gchar *str;
+
+        str = g_strdup_printf ("%.2lf %s",
+                               self->priv->series[series_index].data[self->priv->step_index],
+                               self->priv->y_units);
+        gtk_label_set_text (GTK_LABEL (self->priv->series[series_index].box_value), str);
+        g_free (str);
+    }
 }
 
 void
