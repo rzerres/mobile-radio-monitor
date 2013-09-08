@@ -110,34 +110,39 @@ qmi_client_nas_get_signal_info_ready (QmiClientNas *client,
         gint16 cdma_ecio = -1;
         gint16 evdo_ecio = -1;
         QmiNasEvdoSinrLevel evdo_sinr_level = QMI_NAS_EVDO_SINR_LEVEL_0;
+        gboolean has_gsm;
+        gboolean has_umts;
+        gboolean has_lte;
+        gboolean has_cdma;
+        gboolean has_evdo;
 
         /* Get signal info */
-        qmi_message_nas_get_signal_info_output_get_gsm_signal_strength (output, &gsm_rssi, NULL);
-        qmi_message_nas_get_signal_info_output_get_wcdma_signal_strength (output, &umts_rssi, &umts_ecio, NULL);
-        qmi_message_nas_get_signal_info_output_get_lte_signal_strength (output, &lte_rssi, NULL, NULL, NULL, NULL);
-        qmi_message_nas_get_signal_info_output_get_cdma_signal_strength (output, &cdma_rssi, &cdma_ecio, NULL);
-        qmi_message_nas_get_signal_info_output_get_hdr_signal_strength (output, &evdo_rssi, &evdo_ecio, &evdo_sinr_level, NULL, NULL);
+        has_gsm = qmi_message_nas_get_signal_info_output_get_gsm_signal_strength (output, &gsm_rssi, NULL);
+        has_umts = qmi_message_nas_get_signal_info_output_get_wcdma_signal_strength (output, &umts_rssi, &umts_ecio, NULL);
+        has_lte = qmi_message_nas_get_signal_info_output_get_lte_signal_strength (output, &lte_rssi, NULL, NULL, NULL, NULL);
+        has_cdma = qmi_message_nas_get_signal_info_output_get_cdma_signal_strength (output, &cdma_rssi, &cdma_ecio, NULL);
+        has_evdo = qmi_message_nas_get_signal_info_output_get_hdr_signal_strength (output, &evdo_rssi, &evdo_ecio, &evdo_sinr_level, NULL, NULL);
 
         g_signal_emit (self,
                        signals[SIGNAL_RSSI_UPDATED],
                        0,
-                       (gdouble)gsm_rssi,
-                       (gdouble)umts_rssi,
-                       (gdouble)lte_rssi,
-                       (gdouble)cdma_rssi,
-                       (gdouble)evdo_rssi);
+                       has_gsm ? (gdouble)gsm_rssi : -G_MAXDOUBLE,
+                       has_umts ? (gdouble)umts_rssi : -G_MAXDOUBLE,
+                       has_lte ? (gdouble)lte_rssi : -G_MAXDOUBLE,
+                       has_cdma ? (gdouble)cdma_rssi : -G_MAXDOUBLE,
+                       has_evdo ? (gdouble)evdo_rssi : -G_MAXDOUBLE);
 
         g_signal_emit (self,
                        signals[SIGNAL_ECIO_UPDATED],
                        0,
-                       (-0.5)*((gdouble)umts_ecio),
-                       (-0.5)*((gdouble)cdma_ecio),
-                       (-0.5)*((gdouble)evdo_ecio));
+                       has_umts ? (-0.5)*((gdouble)umts_ecio) : -G_MAXDOUBLE,
+                       has_cdma ? (-0.5)*((gdouble)cdma_ecio) : -G_MAXDOUBLE,
+                       has_evdo ? (-0.5)*((gdouble)evdo_ecio) : -G_MAXDOUBLE);
 
         g_signal_emit (self,
                        signals[SIGNAL_SINR_LEVEL_UPDATED],
                        0,
-                       get_db_from_sinr_level (evdo_sinr_level));
+                       has_evdo ? get_db_from_sinr_level (evdo_sinr_level) : -G_MAXDOUBLE);
     }
 
     if (output)
