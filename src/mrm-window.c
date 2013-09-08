@@ -94,18 +94,6 @@ select_device_list_tab (MrmWindow *self)
     gtk_header_bar_set_title (GTK_HEADER_BAR (self->priv->header_bar), "Mobile Radio Monitor");
     gtk_widget_set_sensitive (self->priv->back_button, FALSE);
     gtk_notebook_set_current_page (GTK_NOTEBOOK (self->priv->notebook), NOTEBOOK_TAB_DEVICE_LIST);
-
-    if (self->priv->rssi_graph_updated_id) {
-        g_signal_handler_disconnect (self->priv->current, self->priv->rssi_graph_updated_id);
-        self->priv->rssi_graph_updated_id = 0;
-    }
-
-    if (self->priv->ecio_graph_updated_id) {
-        g_signal_handler_disconnect (self->priv->current, self->priv->ecio_graph_updated_id);
-        self->priv->ecio_graph_updated_id = 0;
-    }
-
-    g_clear_object (&self->priv->current);
 }
 
 typedef enum {
@@ -149,6 +137,42 @@ ecio_updated (MrmDevice *device,
 }
 
 static void
+change_current_device (MrmWindow *self,
+                       MrmDevice *new_device)
+{
+    if (self->priv->current) {
+        /* If same device, nothing else needed */
+        if (self->priv->current == new_device ||
+            g_str_equal (mrm_device_get_name (self->priv->current), mrm_device_get_name (new_device)))
+            return;
+
+        /* Changing current device, cleanup */
+        if (self->priv->rssi_graph_updated_id) {
+            g_signal_handler_disconnect (self->priv->current, self->priv->rssi_graph_updated_id);
+            self->priv->rssi_graph_updated_id = 0;
+        }
+
+        if (self->priv->ecio_graph_updated_id) {
+            g_signal_handler_disconnect (self->priv->current, self->priv->ecio_graph_updated_id);
+            self->priv->ecio_graph_updated_id = 0;
+        }
+
+        g_clear_object (&self->priv->current);
+    }
+
+    /* Keep a ref to current device */
+    self->priv->current = g_object_ref (new_device);
+    self->priv->rssi_graph_updated_id = g_signal_connect (new_device,
+                                                          "rssi-updated",
+                                                          G_CALLBACK (rssi_updated),
+                                                          self);
+    self->priv->ecio_graph_updated_id = g_signal_connect (new_device,
+                                                          "ecio-updated",
+                                                          G_CALLBACK (ecio_updated),
+                                                          self);
+}
+
+static void
 select_signal_info_tab (MrmWindow *self,
                         MrmDevice *device)
 {
@@ -160,28 +184,8 @@ select_signal_info_tab (MrmWindow *self,
     gtk_widget_set_sensitive (self->priv->back_button, TRUE);
     gtk_notebook_set_current_page (GTK_NOTEBOOK (self->priv->notebook), NOTEBOOK_TAB_SIGNAL_INFO);
 
-    /* Keep a ref to current device */
-    self->priv->current = g_object_ref (device);
-
-    /* RSSI graph */
-    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_GSM,  "GSM",  0, 208, 0);
-    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_UMTS, "UMTS", 208, 0, 0);
-    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_LTE,  "LTE",  0, 0, 208);
-    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_CDMA, "CDMA", 150, 150, 150);
-    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_EVDO, "EVDO", 255, 255, 255);
-    self->priv->rssi_graph_updated_id = g_signal_connect (device,
-                                                          "rssi-updated",
-                                                          G_CALLBACK (rssi_updated),
-                                                          self);
-
-    /* ECIO graph */
-    mrm_graph_setup_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_UMTS, "UMTS", 208, 0, 0);
-    mrm_graph_setup_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_CDMA, "CDMA", 150, 150, 150);
-    mrm_graph_setup_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_EVDO, "EVDO", 255, 255, 255);
-    self->priv->ecio_graph_updated_id = g_signal_connect (device,
-                                                          "ecio-updated",
-                                                          G_CALLBACK (ecio_updated),
-                                                          self);
+    /* Setup device to use */
+    change_current_device (self, device);
 }
 
 /******************************************************************************/
@@ -551,8 +555,6 @@ static void
 back_button_clicked (GtkButton *button,
                      MrmWindow *self)
 {
-    /* Stop NAS monitoring */
-    mrm_device_stop_nas (self->priv->current, NULL, NULL);
     select_device_list_tab (self);
 }
 
@@ -607,6 +609,19 @@ mrm_window_init (MrmWindow *self)
 
     gtk_widget_show (self->priv->device_list_label);
     gtk_widget_hide (self->priv->device_list_frame);
+
+    /* RSSI graph */
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_GSM,  "GSM",  0, 208, 0);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_UMTS, "UMTS", 208, 0, 0);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_LTE,  "LTE",  0, 0, 208);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_CDMA, "CDMA", 150, 150, 150);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_EVDO, "EVDO", 255, 255, 255);
+
+
+    /* ECIO graph */
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_UMTS, "UMTS", 208, 0, 0);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_CDMA, "CDMA", 150, 150, 150);
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_EVDO, "EVDO", 255, 255, 255);
 }
 
 static void
