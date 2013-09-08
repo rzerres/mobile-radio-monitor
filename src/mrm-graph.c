@@ -51,6 +51,7 @@ enum {
     PROP_Y_MAX,
     PROP_Y_UNITS,
     PROP_Y_N_SEPARATORS,
+    PROP_TITLE,
     PROP_LAST
 };
 
@@ -69,12 +70,16 @@ struct _MrmGraphPrivate {
     gdouble  y_max;
     gchar   *y_units;
     guint    y_n_separators;
+    gchar   *title;
 
     /* The series data block */
     Series *series;
 
     /* The current step index */
     guint step_index;
+
+    /* Graph title label */
+    GtkWidget *title_label;
 
     /* The drawing area */
     GtkWidget *drawing_area;
@@ -468,6 +473,24 @@ graph_draw (GtkWidget *widget,
 }
 
 /*****************************************************************************/
+/* Update graph title */
+
+static void
+update_graph_title (MrmGraph *self)
+{
+    gchar *str;
+
+    if (!self->priv->title_label)
+        return;
+
+    str = (self->priv->title ?
+           g_strdup_printf ("<span weight=\"bold\">%s</span>", self->priv->title) :
+           g_strdup (""));
+    gtk_label_set_markup (GTK_LABEL (self->priv->title_label), str);
+    g_free (str);
+}
+
+/*****************************************************************************/
 /* New MRM graph */
 
 GtkWidget *
@@ -507,7 +530,17 @@ constructed (GObject *object)
                   "spacing",     6,
                   NULL);
 
-    /* Initialize stuff */
+    /* Setup title */
+    self->priv->title_label = gtk_label_new ("");
+    gtk_widget_set_halign (self->priv->title_label, GTK_ALIGN_START);
+    gtk_widget_set_margin_left (self->priv->title_label, 8);
+    gtk_widget_set_margin_top (self->priv->title_label, 8);
+    gtk_widget_set_margin_bottom (self->priv->title_label, 4);
+    gtk_box_pack_start (GTK_BOX (self), self->priv->title_label, FALSE, TRUE, 0);
+    gtk_widget_show (self->priv->title_label);
+    update_graph_title (self);
+
+    /* Setup drawing area */
     self->priv->drawing_area = gtk_drawing_area_new ();
     gtk_widget_set_events (self->priv->drawing_area, GDK_EXPOSURE_MASK);
     g_signal_connect (G_OBJECT (self->priv->drawing_area),
@@ -518,7 +551,9 @@ constructed (GObject *object)
                       "configure-event",
                       G_CALLBACK (graph_configure),
                       self);
-
+    gtk_widget_set_margin_left (self->priv->drawing_area, 16);
+    gtk_widget_set_margin_right (self->priv->drawing_area, 8);
+    gtk_widget_set_margin_bottom (self->priv->drawing_area, 8);
     gtk_box_pack_start (GTK_BOX (self), self->priv->drawing_area, TRUE, TRUE, 0);
     gtk_widget_show (self->priv->drawing_area);
 
@@ -552,6 +587,11 @@ set_property (GObject *object,
     case PROP_Y_N_SEPARATORS:
         self->priv->y_n_separators = g_value_get_uint (value);
         break;
+    case PROP_TITLE:
+        g_free (self->priv->title);
+        self->priv->title = g_value_dup_string (value);
+        update_graph_title (self);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
         break;
@@ -582,6 +622,9 @@ get_property (GObject *object,
     case PROP_Y_N_SEPARATORS:
         g_value_set_uint (value, self->priv->y_n_separators);
         break;
+    case PROP_TITLE:
+        g_value_set_string (value, self->priv->title);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
         break;
@@ -596,6 +639,7 @@ finalize (GObject *object)
     if (self->priv->series)
         free_series (self);
     g_free (self->priv->y_units);
+    g_free (self->priv->title);
 
     G_OBJECT_CLASS (mrm_graph_parent_class)->finalize (object);
 }
@@ -659,4 +703,12 @@ mrm_graph_class_init (MrmGraphClass *klass)
                            5,
                            G_PARAM_READWRITE);
     g_object_class_install_property (object_class, PROP_Y_N_SEPARATORS, properties[PROP_Y_N_SEPARATORS]);
+
+    properties[PROP_TITLE] =
+        g_param_spec_string ("title",
+                             "Title",
+                             "Graph title",
+                             "",
+                             G_PARAM_READWRITE);
+    g_object_class_install_property (object_class, PROP_TITLE, properties[PROP_TITLE]);
 }
