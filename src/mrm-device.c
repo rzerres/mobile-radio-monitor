@@ -36,6 +36,7 @@ static GParamSpec *properties[PROP_LAST];
 enum {
     SIGNAL_RSSI_UPDATED,
     SIGNAL_ECIO_UPDATED,
+    SIGNAL_SINR_LEVEL_UPDATED,
     SIGNAL_LAST
 };
 
@@ -67,6 +68,25 @@ struct _MrmDevicePrivate {
 /*****************************************************************************/
 /* Reload signal info */
 
+static gdouble
+get_db_from_sinr_level (QmiNasEvdoSinrLevel level)
+{
+    switch (level) {
+    case QMI_NAS_EVDO_SINR_LEVEL_0: return -9.0;
+    case QMI_NAS_EVDO_SINR_LEVEL_1: return -6;
+    case QMI_NAS_EVDO_SINR_LEVEL_2: return -4.5;
+    case QMI_NAS_EVDO_SINR_LEVEL_3: return -3;
+    case QMI_NAS_EVDO_SINR_LEVEL_4: return -2;
+    case QMI_NAS_EVDO_SINR_LEVEL_5: return 1;
+    case QMI_NAS_EVDO_SINR_LEVEL_6: return 3;
+    case QMI_NAS_EVDO_SINR_LEVEL_7: return 6;
+    case QMI_NAS_EVDO_SINR_LEVEL_8: return +9;
+    default:
+        g_warning ("Invalid SINR level '%u'", level);
+        return -G_MAXDOUBLE;
+    }
+}
+
 static void
 qmi_client_nas_get_signal_info_ready (QmiClientNas *client,
                                       GAsyncResult *res,
@@ -89,13 +109,14 @@ qmi_client_nas_get_signal_info_ready (QmiClientNas *client,
         gint16 umts_ecio = -1;
         gint16 cdma_ecio = -1;
         gint16 evdo_ecio = -1;
+        QmiNasEvdoSinrLevel evdo_sinr_level = QMI_NAS_EVDO_SINR_LEVEL_0;
 
         /* Get signal info */
         qmi_message_nas_get_signal_info_output_get_gsm_signal_strength (output, &gsm_rssi, NULL);
         qmi_message_nas_get_signal_info_output_get_wcdma_signal_strength (output, &umts_rssi, &umts_ecio, NULL);
         qmi_message_nas_get_signal_info_output_get_lte_signal_strength (output, &lte_rssi, NULL, NULL, NULL, NULL);
         qmi_message_nas_get_signal_info_output_get_cdma_signal_strength (output, &cdma_rssi, &cdma_ecio, NULL);
-        qmi_message_nas_get_signal_info_output_get_hdr_signal_strength (output, &evdo_rssi, &evdo_ecio, NULL, NULL, NULL);
+        qmi_message_nas_get_signal_info_output_get_hdr_signal_strength (output, &evdo_rssi, &evdo_ecio, &evdo_sinr_level, NULL, NULL);
 
         g_signal_emit (self,
                        signals[SIGNAL_RSSI_UPDATED],
@@ -112,6 +133,11 @@ qmi_client_nas_get_signal_info_ready (QmiClientNas *client,
                        (-0.5)*((gdouble)umts_ecio),
                        (-0.5)*((gdouble)cdma_ecio),
                        (-0.5)*((gdouble)evdo_ecio));
+
+        g_signal_emit (self,
+                       signals[SIGNAL_SINR_LEVEL_UPDATED],
+                       0,
+                       get_db_from_sinr_level (evdo_sinr_level));
     }
 
     if (output)
@@ -1093,5 +1119,16 @@ mrm_device_class_init (MrmDeviceClass *klass)
                       3,
                       G_TYPE_DOUBLE,
                       G_TYPE_DOUBLE,
+                      G_TYPE_DOUBLE);
+
+    signals[SIGNAL_SINR_LEVEL_UPDATED] =
+        g_signal_new ("sinr-level-updated",
+                      G_OBJECT_CLASS_TYPE (object_class),
+                      G_SIGNAL_RUN_FIRST,
+                      G_STRUCT_OFFSET (MrmDeviceClass, sinr_level_updated),
+                      NULL, NULL,
+                      g_cclosure_marshal_generic,
+					  G_TYPE_NONE,
+                      1,
                       G_TYPE_DOUBLE);
 }

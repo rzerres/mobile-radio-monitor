@@ -49,16 +49,21 @@ struct _MrmDeviceClass {
     GObjectClass parent_class;
 
     /* Signals */
+
     void (*rssi_updated) (MrmDevice *device,
                           gdouble gsm_rssi,
                           gdouble umts_rssi,
                           gdouble lte_rssi,
                           gdouble cdma_rssi,
                           gdouble evdo_rssi);
+
     void (*ecio_updated) (MrmDevice *device,
                           gdouble umts_ecio,
                           gdouble cdma_ecio,
                           gdouble evdo_ecio);
+
+    void (*sinr_level_updated) (MrmDevice *device,
+                                gdouble evdo_sinr_level);
 };
 
 GType mrm_device_get_type (void) G_GNUC_CONST;
