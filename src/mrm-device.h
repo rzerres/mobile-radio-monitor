@@ -55,6 +55,10 @@ struct _MrmDeviceClass {
                           gdouble lte_rssi,
                           gdouble cdma_rssi,
                           gdouble evdo_rssi);
+    void (*ecio_updated) (MrmDevice *device,
+                          gdouble umts_ecio,
+                          gdouble cdma_ecio,
+                          gdouble evdo_ecio);
 };
 
 GType mrm_device_get_type (void) G_GNUC_CONST;

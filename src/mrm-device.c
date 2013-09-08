@@ -35,6 +35,7 @@ static GParamSpec *properties[PROP_LAST];
 
 enum {
     SIGNAL_RSSI_UPDATED,
+    SIGNAL_ECIO_UPDATED,
     SIGNAL_LAST
 };
 
@@ -85,17 +86,20 @@ qmi_client_nas_get_signal_info_ready (QmiClientNas *client,
         gint8 lte_rssi  = -113;
         gint8 cdma_rssi = -113;
         gint8 evdo_rssi = -113;
+        gint16 umts_ecio = -1;
+        gint16 cdma_ecio = -1;
+        gint16 evdo_ecio = -1;
 
-        /* RSSI */
+        /* Get signal info */
         if (qmi_message_nas_get_signal_info_output_get_gsm_signal_strength (output, &gsm_rssi, NULL))
             gsm_rssi = CLAMP (gsm_rssi, -113, -51);
-        if (qmi_message_nas_get_signal_info_output_get_wcdma_signal_strength (output, &umts_rssi, NULL, NULL))
+        if (qmi_message_nas_get_signal_info_output_get_wcdma_signal_strength (output, &umts_rssi, &umts_ecio, NULL))
             umts_rssi = CLAMP (umts_rssi, -113, -51);
         if (qmi_message_nas_get_signal_info_output_get_lte_signal_strength (output, &lte_rssi, NULL, NULL, NULL, NULL))
             lte_rssi = CLAMP (lte_rssi, -113, -51);
-        if (qmi_message_nas_get_signal_info_output_get_cdma_signal_strength (output, &cdma_rssi, NULL, NULL))
+        if (qmi_message_nas_get_signal_info_output_get_cdma_signal_strength (output, &cdma_rssi, &cdma_ecio, NULL))
             cdma_rssi = CLAMP (cdma_rssi, -113, -51);
-        if (qmi_message_nas_get_signal_info_output_get_hdr_signal_strength (output, &evdo_rssi, NULL, NULL, NULL, NULL))
+        if (qmi_message_nas_get_signal_info_output_get_hdr_signal_strength (output, &evdo_rssi, &evdo_ecio, NULL, NULL, NULL))
             evdo_rssi = CLAMP (evdo_rssi, -113, -51);
 
         g_signal_emit (self,
@@ -106,6 +110,13 @@ qmi_client_nas_get_signal_info_ready (QmiClientNas *client,
                        (gdouble)lte_rssi,
                        (gdouble)cdma_rssi,
                        (gdouble)evdo_rssi);
+
+        g_signal_emit (self,
+                       signals[SIGNAL_ECIO_UPDATED],
+                       0,
+                       (-0.5)*((gdouble)umts_ecio),
+                       (-0.5)*((gdouble)cdma_ecio),
+                       (-0.5)*((gdouble)evdo_ecio));
     }
 
     if (output)
@@ -982,6 +993,19 @@ mrm_device_class_init (MrmDeviceClass *klass)
                       5,
                       G_TYPE_DOUBLE,
                       G_TYPE_DOUBLE,
+                      G_TYPE_DOUBLE,
+                      G_TYPE_DOUBLE,
+                      G_TYPE_DOUBLE);
+
+    signals[SIGNAL_ECIO_UPDATED] =
+        g_signal_new ("ecio-updated",
+                      G_OBJECT_CLASS_TYPE (object_class),
+                      G_SIGNAL_RUN_FIRST,
+                      G_STRUCT_OFFSET (MrmDeviceClass, ecio_updated),
+                      NULL, NULL,
+                      g_cclosure_marshal_generic,
+					  G_TYPE_NONE,
+                      3,
                       G_TYPE_DOUBLE,
                       G_TYPE_DOUBLE,
                       G_TYPE_DOUBLE);
