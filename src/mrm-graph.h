@@ -58,6 +58,8 @@ void mrm_graph_setup_series (MrmGraph *self,
                              guint8 color_red,
                              guint8 color_green,
                              guint8 color_blue);
+void mrm_graph_clear_series (MrmGraph *self,
+                             guint series_index);
 
 void mrm_graph_step_init      (MrmGraph *self);
 void mrm_graph_step_set_value (MrmGraph *self,

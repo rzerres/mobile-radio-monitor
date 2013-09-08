@@ -124,9 +124,9 @@ free_series (MrmGraph *self)
     self->priv->series = NULL;
 }
 
-static void
-clear_series (MrmGraph *self,
-              guint series_index)
+void
+mrm_graph_clear_series (MrmGraph *self,
+                        guint series_index)
 {
     guint i;
 
@@ -134,6 +134,7 @@ clear_series (MrmGraph *self,
         self->priv->series[series_index].data[i] = -G_MAXDOUBLE;
 
     g_free (self->priv->series[series_index].text);
+    self->priv->series[series_index].text = NULL;
 
     if (self->priv->series[series_index].box) {
         gtk_container_remove (GTK_CONTAINER (self->priv->legend_box),
@@ -155,7 +156,7 @@ allocate_series (MrmGraph *self)
 
     self->priv->series = g_new0 (Series, self->priv->n_series);
     for (i = 0; i < self->priv->n_series; i++)
-        clear_series (self, i);
+        mrm_graph_clear_series (self, i);
 }
 
 void
@@ -168,7 +169,7 @@ mrm_graph_setup_series (MrmGraph *self,
 {
     g_assert_cmpuint (series_index, <, self->priv->n_series);
 
-    clear_series (self, series_index);
+    mrm_graph_clear_series (self, series_index);
 
     self->priv->series[series_index].text = g_strdup (label);
     self->priv->series[series_index].color.red = ((gdouble)color_red) / 255.0;
