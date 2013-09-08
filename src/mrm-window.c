@@ -148,8 +148,9 @@ change_current_device (MrmWindow *self,
 {
     if (self->priv->current) {
         /* If same device, nothing else needed */
-        if (self->priv->current == new_device ||
-            g_str_equal (mrm_device_get_name (self->priv->current), mrm_device_get_name (new_device)))
+        if (new_device &&
+            (self->priv->current == new_device ||
+             g_str_equal (mrm_device_get_name (self->priv->current), mrm_device_get_name (new_device))))
             return;
 
         /* Changing current device, cleanup */
@@ -164,18 +165,32 @@ change_current_device (MrmWindow *self,
         }
 
         g_clear_object (&self->priv->current);
+
+        /* Clear graphs */
+
+        mrm_graph_clear_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_GSM);
+        mrm_graph_clear_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_UMTS);
+        mrm_graph_clear_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_LTE);
+        mrm_graph_clear_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_CDMA);
+        mrm_graph_clear_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_EVDO);
+
+        mrm_graph_clear_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_ECIO_UMTS);
+        mrm_graph_clear_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_ECIO_CDMA);
+        mrm_graph_clear_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_ECIO_EVDO);
     }
 
-    /* Keep a ref to current device */
-    self->priv->current = g_object_ref (new_device);
-    self->priv->rssi_graph_updated_id = g_signal_connect (new_device,
-                                                          "rssi-updated",
-                                                          G_CALLBACK (rssi_updated),
-                                                          self);
-    self->priv->ecio_graph_updated_id = g_signal_connect (new_device,
-                                                          "ecio-updated",
-                                                          G_CALLBACK (ecio_updated),
-                                                          self);
+    if (new_device) {
+        /* Keep a ref to current device */
+        self->priv->current = g_object_ref (new_device);
+        self->priv->rssi_graph_updated_id = g_signal_connect (new_device,
+                                                              "rssi-updated",
+                                                              G_CALLBACK (rssi_updated),
+                                                              self);
+        self->priv->ecio_graph_updated_id = g_signal_connect (new_device,
+                                                              "ecio-updated",
+                                                              G_CALLBACK (ecio_updated),
+                                                              self);
+    }
 }
 
 static void
@@ -478,6 +493,16 @@ device_removed_cb (MrmApp *application,
     if (removed && !valid) {
         gtk_widget_hide (self->priv->device_list_frame);
         gtk_widget_show (self->priv->device_list_label);
+    }
+
+    /* If we were monitoring this device already, stop it and back to the device
+     * list tab */
+    if (self->priv->current &&
+        (device == self->priv->current ||
+         g_str_equal (mrm_device_get_name (self->priv->current),
+                      mrm_device_get_name (device)))) {
+        change_current_device (self, NULL);
+        select_device_list_tab (self);
     }
 
     g_list_free (children);
