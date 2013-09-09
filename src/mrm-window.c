@@ -20,6 +20,7 @@
 #include "mrm-window.h"
 #include "mrm-device.h"
 #include "mrm-graph.h"
+#include "mrm-color-icon.h"
 
 #define NOTEBOOK_TAB_DEVICE_LIST 0
 #define NOTEBOOK_TAB_SIGNAL_INFO 1
@@ -43,6 +44,11 @@ struct _MrmWindowPrivate {
 
     /* Signal info tab */
     MrmDevice *current;
+    GtkWidget *graph_legend_gsm_icon;
+    GtkWidget *graph_legend_umts_icon;
+    GtkWidget *graph_legend_lte_icon;
+    GtkWidget *graph_legend_cdma_icon;
+    GtkWidget *graph_legend_evdo_icon;
     GtkWidget *rssi_graph;
     guint rssi_graph_updated_id;
     GtkWidget *ecio_graph;
@@ -745,8 +751,10 @@ mrm_window_init (MrmWindow *self)
 {
     self->priv = mrm_window_get_instance_private (self);
 
-    /* Ensure we register the MrmGraph before initiating template */
-    mrm_graph_get_type ();
+    /* Ensure we register the MrmGraph and MrmColorIcon before initiating
+     * the template */
+    g_warn_if_fail (mrm_color_icon_get_type ());
+    g_warn_if_fail (mrm_graph_get_type ());
 
     gtk_widget_init_template (GTK_WIDGET (self));
 
@@ -782,13 +790,19 @@ mrm_window_init (MrmWindow *self)
 #define CDMA_RGB 153, 153, 0   /* yellow */
 #define EVDO_RGB 153, 0,   153 /* purple */
 
+    /* Main legend box */
+    mrm_color_icon_set_color (MRM_COLOR_ICON (self->priv->graph_legend_gsm_icon),  GSM_RGB);
+    mrm_color_icon_set_color (MRM_COLOR_ICON (self->priv->graph_legend_umts_icon), UMTS_RGB);
+    mrm_color_icon_set_color (MRM_COLOR_ICON (self->priv->graph_legend_lte_icon),  LTE_RGB);
+    mrm_color_icon_set_color (MRM_COLOR_ICON (self->priv->graph_legend_cdma_icon), CDMA_RGB);
+    mrm_color_icon_set_color (MRM_COLOR_ICON (self->priv->graph_legend_evdo_icon), EVDO_RGB);
+
     /* RSSI graph */
     mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_GSM,  "GSM",  GSM_RGB);
     mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_UMTS, "UMTS", UMTS_RGB);
     mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_LTE,  "LTE",  LTE_RGB);
     mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_CDMA, "CDMA", CDMA_RGB);
     mrm_graph_setup_series (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_EVDO, "EVDO", EVDO_RGB);
-
 
     /* ECIO graph */
     mrm_graph_setup_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_ECIO_UMTS, "UMTS", UMTS_RGB);
@@ -876,4 +890,9 @@ mrm_window_class_init (MrmWindowClass *klass)
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, rsrq_graph);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, rsrp_graph);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, snr_graph);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_gsm_icon);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_umts_icon);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_lte_icon);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_cdma_icon);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_evdo_icon);
 }
