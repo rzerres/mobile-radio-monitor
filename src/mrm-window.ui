@@ -309,12 +309,12 @@
           </packing>
         </child>
         <child>
-          <object class="GtkBox" id="graph_box">
+          <object class="GtkGrid" id="graph_box">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="column_homogeneous">True</property>
             <property name="hexpand">True</property>
             <property name="vexpand">True</property>
-            <property name="orientation">vertical</property>
             <child>
               <object class="MrmGraph" id="rssi_graph">
                 <property name="visible">True</property>
@@ -329,9 +329,10 @@
                 <property name="vexpand">True</property>
               </object>
               <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">0</property>
+                <property name="left_attach">0</property>
+                <property name="top_attach">0</property>
+                <property name="width">1</property>
+                <property name="height">1</property>
               </packing>
             </child>
             <child>
@@ -348,9 +349,10 @@
                 <property name="vexpand">True</property>
               </object>
               <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">1</property>
+                <property name="left_attach">1</property>
+                <property name="top_attach">0</property>
+                <property name="width">1</property>
+                <property name="height">1</property>
               </packing>
             </child>
             <child>
@@ -367,9 +369,10 @@
                 <property name="vexpand">True</property>
               </object>
               <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">2</property>
+                <property name="left_attach">0</property>
+                <property name="top_attach">1</property>
+                <property name="width">1</property>
+                <property name="height">1</property>
               </packing>
             </child>
           </object>
