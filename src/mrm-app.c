@@ -358,6 +358,7 @@ ensure_main_window (MrmApp *self)
 
     window = mrm_window_new (self);
     gtk_application_add_window (GTK_APPLICATION (self), GTK_WINDOW (window));
+    gtk_window_maximize (GTK_WINDOW (window));
     gtk_widget_show (window);
 }
 

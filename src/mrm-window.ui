@@ -14,6 +14,7 @@
     <property name="has_focus">False</property>
     <property name="is_focus">False</property>
     <property name="icon_name">mobile-radio-monitor</property>
+    <property name="window_position">center</property>
     <property name="default_width">800</property>
     <property name="default_height">600</property>
     <child type="titlebar">
@@ -315,8 +316,8 @@
             <property name="column-homogeneous">True</property>
             <property name="hexpand">True</property>
             <property name="vexpand">True</property>
-            <property name="row-spacing">15</property>
-            <property name="column-spacing">15</property>
+            <property name="row-spacing">5</property>
+            <property name="column-spacing">5</property>
             <child>
               <object class="MrmGraph" id="rssi_graph">
                 <property name="visible">True</property>
