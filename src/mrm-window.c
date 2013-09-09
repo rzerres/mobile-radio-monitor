@@ -49,6 +49,8 @@ struct _MrmWindowPrivate {
     guint ecio_graph_updated_id;
     GtkWidget *sinr_level_graph;
     guint sinr_level_graph_updated_id;
+    GtkWidget *io_graph;
+    guint io_graph_updated_id;
 
     guint initial_scan_done_id;
     guint device_detection_id;
@@ -158,6 +160,20 @@ sinr_level_updated (MrmDevice *device,
     mrm_graph_step_finish (MRM_GRAPH (self->priv->sinr_level_graph));
 }
 
+typedef enum {
+    SERIES_IO_EVDO = 0,
+} SeriesIo;
+
+static void
+io_updated (MrmDevice *device,
+            gdouble evdo_io,
+            MrmWindow *self)
+{
+    mrm_graph_step_init (MRM_GRAPH (self->priv->io_graph));
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->io_graph), SERIES_IO_EVDO, evdo_io);
+    mrm_graph_step_finish (MRM_GRAPH (self->priv->io_graph));
+}
+
 static void
 change_current_device (MrmWindow *self,
                        MrmDevice *new_device)
@@ -185,6 +201,11 @@ change_current_device (MrmWindow *self,
             self->priv->sinr_level_graph_updated_id = 0;
         }
 
+        if (self->priv->io_graph_updated_id) {
+            g_signal_handler_disconnect (self->priv->current, self->priv->io_graph_updated_id);
+            self->priv->io_graph_updated_id = 0;
+        }
+
         g_clear_object (&self->priv->current);
 
         /* Clear graphs */
@@ -200,6 +221,8 @@ change_current_device (MrmWindow *self,
         mrm_graph_clear_series (MRM_GRAPH (self->priv->ecio_graph), SERIES_ECIO_EVDO);
 
         mrm_graph_clear_series (MRM_GRAPH (self->priv->sinr_level_graph), SERIES_SINR_LEVEL_EVDO);
+
+        mrm_graph_clear_series (MRM_GRAPH (self->priv->io_graph), SERIES_IO_EVDO);
     }
 
     if (new_device) {
@@ -217,6 +240,10 @@ change_current_device (MrmWindow *self,
                                                                     "sinr-level-updated",
                                                                     G_CALLBACK (sinr_level_updated),
                                                                     self);
+        self->priv->io_graph_updated_id = g_signal_connect (new_device,
+                                                            "io-updated",
+                                                            G_CALLBACK (io_updated),
+                                                            self);
     }
 }
 
@@ -689,6 +716,9 @@ mrm_window_init (MrmWindow *self)
 
     /* SINR level graph */
     mrm_graph_setup_series (MRM_GRAPH (self->priv->sinr_level_graph), SERIES_SINR_LEVEL_EVDO, "EVDO", EVDO_RGB);
+
+    /* Io graph */
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->io_graph), SERIES_IO_EVDO, "EVDO", EVDO_RGB);
 }
 
 static void
@@ -752,4 +782,5 @@ mrm_window_class_init (MrmWindowClass *klass)
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, rssi_graph);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, ecio_graph);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, sinr_level_graph);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, io_graph);
 }
