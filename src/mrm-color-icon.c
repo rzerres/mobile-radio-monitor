@@ -66,6 +66,26 @@ render (MrmColorIcon *self)
 
 /******************************************************************************/
 
+void
+mrm_color_icon_set_color (MrmColorIcon *self,
+                          guint8 color_red,
+                          guint8 color_green,
+                          guint8 color_blue)
+{
+    GdkRGBA color;
+
+    color.red = ((gdouble)color_red) / 255.0;
+    color.green = ((gdouble)color_green) / 255.0;
+    color.blue = ((gdouble)color_blue) / 255.0;
+    color.alpha = 1.0;
+
+    g_object_set (self,
+                  "color", &color,
+                  NULL);
+}
+
+/******************************************************************************/
+
 GtkWidget *
 mrm_color_icon_new (const GdkRGBA *color)
 {
@@ -160,10 +180,10 @@ set_property (GObject *object,
         const GdkRGBA *color;
 
         color = g_value_get_boxed (value);
-        self->priv->color.red = color->red;
-        self->priv->color.green = color->green;
-        self->priv->color.blue = color->blue;
-        self->priv->color.alpha = color->alpha;
+        self->priv->color.red = color ? color->red : 0.0;
+        self->priv->color.green = color ? color->green : 0.0;
+        self->priv->color.blue = color ? color->blue : 0.0;
+        self->priv->color.alpha = color ? color->alpha : 1.0;
         break;
     }
     default:
@@ -218,6 +238,7 @@ mrm_color_icon_init (MrmColorIcon *self)
     self->priv->color.red = 0;
     self->priv->color.green = 0;
     self->priv->color.blue = 0;
+    self->priv->color.alpha = 1.0;
     self->priv->image_buffer = NULL;
 
     g_signal_connect (self,
@@ -251,5 +272,5 @@ mrm_color_icon_class_init (MrmColorIconClass * klass)
                                                          "Current Color",
                                                          "The selected color",
                                                          GDK_TYPE_RGBA,
-                                                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+                                                         G_PARAM_READWRITE));
 }

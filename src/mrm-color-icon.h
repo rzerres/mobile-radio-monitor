@@ -52,5 +52,10 @@ GType mrm_color_icon_get_type (void) G_GNUC_CONST;
 
 GtkWidget *mrm_color_icon_new (const GdkRGBA *color);
 
+void mrm_color_icon_set_color (MrmColorIcon *self,
+                               guint8 color_red,
+                               guint8 color_green,
+                               guint8 color_blue);
+
 G_END_DECLS
 #endif /* __MRM_COLOR_ICON_H__ */
