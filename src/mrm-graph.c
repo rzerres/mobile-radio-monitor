@@ -17,6 +17,7 @@
 
 
 #include "mrm-graph.h"
+#include "mrm-enum-types.h"
 #include "mrm-color-icon.h"
 
 #include <math.h>
@@ -53,6 +54,7 @@ enum {
     PROP_Y_UNITS,
     PROP_Y_N_SEPARATORS,
     PROP_TITLE,
+    PROP_LEGEND_POSITION,
     PROP_LAST
 };
 
@@ -76,6 +78,7 @@ struct _MrmGraphPrivate {
     gchar   *y_units;
     guint    y_n_separators;
     gchar   *title;
+    MrmGraphLegendPosition legend_position;
 
     /* The series data block */
     Series *series;
@@ -137,8 +140,9 @@ mrm_graph_clear_series (MrmGraph *self,
     self->priv->series[series_index].text = NULL;
 
     if (self->priv->series[series_index].box) {
-        gtk_container_remove (GTK_CONTAINER (self->priv->legend_box),
-                              self->priv->series[series_index].box);
+        if (self->priv->legend_box)
+            gtk_container_remove (GTK_CONTAINER (self->priv->legend_box),
+                                  self->priv->series[series_index].box);
         self->priv->series[series_index].box = NULL;
         self->priv->series[series_index].box_icon = NULL;
         self->priv->series[series_index].box_label = NULL;
@@ -178,7 +182,8 @@ mrm_graph_setup_series (MrmGraph *self,
     self->priv->series[series_index].color.alpha = 1.0;
 
     self->priv->series[series_index].box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 8);
-    gtk_box_pack_start (GTK_BOX (self->priv->legend_box), self->priv->series[series_index].box, TRUE, TRUE, 0);
+    if (self->priv->legend_box)
+        gtk_box_pack_start (GTK_BOX (self->priv->legend_box), self->priv->series[series_index].box, TRUE, TRUE, 0);
     gtk_widget_show (self->priv->series[series_index].box);
 
     self->priv->series[series_index].box_icon = mrm_color_icon_new (&self->priv->series[series_index].color);
@@ -566,6 +571,7 @@ mrm_graph_init (MrmGraph *self)
     self->priv->y_max = 100.0;
     self->priv->y_units = g_strdup ("%");
     self->priv->y_n_separators = 5;
+    self->priv->legend_position = MRM_GRAPH_LEGEND_POSITION_BOTTOM;
 }
 
 static void
@@ -586,7 +592,6 @@ constructed (GObject *object)
     /* Setup title */
     self->priv->title_label = gtk_label_new ("");
     gtk_widget_set_halign (self->priv->title_label, GTK_ALIGN_START);
-    gtk_box_pack_start (GTK_BOX (self), self->priv->title_label, FALSE, TRUE, 0);
     gtk_widget_show (self->priv->title_label);
     update_graph_title (self);
 
@@ -604,17 +609,39 @@ constructed (GObject *object)
     gtk_widget_set_margin_left (self->priv->drawing_area, 8);
     gtk_widget_set_margin_top (self->priv->drawing_area, 4);
     gtk_widget_set_margin_bottom (self->priv->drawing_area, 4);
-    gtk_box_pack_start (GTK_BOX (self), self->priv->drawing_area, TRUE, TRUE, 0);
+
     gtk_widget_show (self->priv->drawing_area);
 
-    /* Legend box */
-    self->priv->legend_box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 8);
-    gtk_widget_set_hexpand (self->priv->legend_box, TRUE);
-    gtk_widget_set_margin_left (self->priv->legend_box, 16);
-    gtk_widget_set_margin_top (self->priv->legend_box, 4);
-    gtk_widget_set_margin_bottom (self->priv->legend_box, 4);
-    gtk_box_pack_start (GTK_BOX (self), self->priv->legend_box, FALSE, TRUE, 0);
-    gtk_widget_show (self->priv->legend_box);
+    if (self->priv->legend_position == MRM_GRAPH_LEGEND_POSITION_NONE) {
+        /* No legend, just title and graph */
+        gtk_box_pack_start (GTK_BOX (self), self->priv->title_label, FALSE, TRUE, 0);
+        gtk_box_pack_start (GTK_BOX (self), self->priv->drawing_area, TRUE, TRUE, 0);
+    } else {
+        /* Legend box */
+        self->priv->legend_box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 8);
+        gtk_widget_set_hexpand (self->priv->legend_box, TRUE);
+        gtk_widget_set_margin_left (self->priv->legend_box, 16);
+        gtk_widget_set_margin_top (self->priv->legend_box, 4);
+        gtk_widget_set_margin_bottom (self->priv->legend_box, 4);
+        gtk_widget_show (self->priv->legend_box);
+
+        if (self->priv->legend_position == MRM_GRAPH_LEGEND_POSITION_BOTTOM) {
+            gtk_box_pack_start (GTK_BOX (self), self->priv->title_label, FALSE, TRUE, 0);
+            gtk_box_pack_start (GTK_BOX (self), self->priv->drawing_area, TRUE, TRUE, 0);
+            gtk_box_pack_start (GTK_BOX (self), self->priv->legend_box, FALSE, TRUE, 0);
+        } else {
+            GtkWidget *titlebox;
+
+            /* Setup titlebox */
+            titlebox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 20);
+            gtk_box_pack_start (GTK_BOX (titlebox), self->priv->title_label, FALSE, TRUE, 0);
+            gtk_box_pack_start (GTK_BOX (titlebox), self->priv->legend_box, FALSE, TRUE, 0);
+            gtk_widget_show (titlebox);
+
+            gtk_box_pack_start (GTK_BOX (self), titlebox, FALSE, TRUE, 0);
+            gtk_box_pack_start (GTK_BOX (self), self->priv->drawing_area, TRUE, TRUE, 0);
+        }
+    }
 
     G_OBJECT_CLASS (mrm_graph_parent_class)->constructed (object);
 }
@@ -651,6 +678,9 @@ set_property (GObject *object,
         self->priv->title = g_value_dup_string (value);
         update_graph_title (self);
         break;
+    case PROP_LEGEND_POSITION:
+        self->priv->legend_position = g_value_get_enum (value);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
         break;
@@ -683,6 +713,9 @@ get_property (GObject *object,
         break;
     case PROP_TITLE:
         g_value_set_string (value, self->priv->title);
+        break;
+    case PROP_LEGEND_POSITION:
+        g_value_set_enum (value, self->priv->legend_position);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -770,4 +803,13 @@ mrm_graph_class_init (MrmGraphClass *klass)
                              "",
                              G_PARAM_READWRITE);
     g_object_class_install_property (object_class, PROP_TITLE, properties[PROP_TITLE]);
+
+    properties[PROP_LEGEND_POSITION] =
+        g_param_spec_enum ("legend-position",
+                           "Legend position",
+                           "Whether the legend should be displayed, and where",
+                           MRM_TYPE_GRAPH_LEGEND_POSITION,
+                           MRM_GRAPH_LEGEND_POSITION_BOTTOM,
+                           G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
+    g_object_class_install_property (object_class, PROP_LEGEND_POSITION, properties[PROP_LEGEND_POSITION]);
 }

@@ -2,6 +2,7 @@
 noinst_PROGRAMS = test-graph
 
 test_graph_SOURCES = \
+	$(top_srcdir)/src/mrm-enum-types.h $(top_srcdir)/src/mrm-enum-types.c \
 	$(top_srcdir)/src/mrm-color-icon.h $(top_srcdir)/src/mrm-color-icon.c \
 	$(top_srcdir)/src/mrm-graph.h $(top_srcdir)/src/mrm-graph.c \
 	test-graph.c

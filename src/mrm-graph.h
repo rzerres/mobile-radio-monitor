@@ -31,6 +31,12 @@ typedef struct _MrmGraph MrmGraph;
 typedef struct _MrmGraphClass MrmGraphClass;
 typedef struct _MrmGraphPrivate MrmGraphPrivate;
 
+typedef enum {
+    MRM_GRAPH_LEGEND_POSITION_NONE   = 0,
+    MRM_GRAPH_LEGEND_POSITION_TOP    = 1,
+    MRM_GRAPH_LEGEND_POSITION_BOTTOM = 2,
+} MrmGraphLegendPosition;
+
 /**
  * MrmGraph:
  *

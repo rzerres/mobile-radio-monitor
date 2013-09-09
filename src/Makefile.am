@@ -47,11 +47,12 @@ mrm-error-types.c: Makefile.am mrm-error.h $(top_srcdir)/build-aux/mrm-error-typ
 # Enum types
 
 ENUMS = \
-	$(srcdir)/mrm-device.h
+	$(srcdir)/mrm-device.h \
+	$(srcdir)/mrm-graph.h
 
 mrm-enum-types.h: Makefile.am $(ENUMS) $(top_srcdir)/build-aux/mrm-enum-types-template.h
 	$(AM_V_GEN) $(GLIB_MKENUMS) \
-		--fhead "#include \"mrm-device.h\"\n#ifndef __MRM_ENUM_TYPES_H__\n#define __MRM_ENUM_TYPES_H__\n" \
+		--fhead "#include \"mrm-device.h\"\n#include \"mrm-graph.h\"\n#ifndef __MRM_ENUM_TYPES_H__\n#define __MRM_ENUM_TYPES_H__\n" \
 		--template $(top_srcdir)/build-aux/mrm-enum-types-template.h \
 		--ftail "#endif /* __MRM_ENUM_TYPES_H__ */\n" \
 		$(ENUMS) > $@
