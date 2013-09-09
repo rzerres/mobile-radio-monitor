@@ -51,6 +51,12 @@ struct _MrmWindowPrivate {
     guint sinr_level_graph_updated_id;
     GtkWidget *io_graph;
     guint io_graph_updated_id;
+    GtkWidget *rsrq_graph;
+    guint rsrq_graph_updated_id;
+    GtkWidget *rsrp_graph;
+    guint rsrp_graph_updated_id;
+    GtkWidget *snr_graph;
+    guint snr_graph_updated_id;
 
     guint initial_scan_done_id;
     guint device_detection_id;
@@ -174,6 +180,48 @@ io_updated (MrmDevice *device,
     mrm_graph_step_finish (MRM_GRAPH (self->priv->io_graph));
 }
 
+typedef enum {
+    SERIES_RSRQ_LTE = 0,
+} SeriesRsrqLte;
+
+static void
+rsrq_updated (MrmDevice *device,
+              gdouble lte_rsrq,
+              MrmWindow *self)
+{
+    mrm_graph_step_init (MRM_GRAPH (self->priv->rsrq_graph));
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rsrq_graph), SERIES_RSRQ_LTE, lte_rsrq);
+    mrm_graph_step_finish (MRM_GRAPH (self->priv->rsrq_graph));
+}
+
+typedef enum {
+    SERIES_RSRP_LTE = 0,
+} SeriesRsrpLte;
+
+static void
+rsrp_updated (MrmDevice *device,
+              gdouble lte_rsrp,
+              MrmWindow *self)
+{
+    mrm_graph_step_init (MRM_GRAPH (self->priv->rsrp_graph));
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rsrp_graph), SERIES_RSRP_LTE, lte_rsrp);
+    mrm_graph_step_finish (MRM_GRAPH (self->priv->rsrp_graph));
+}
+
+typedef enum {
+    SERIES_SNR_LTE = 0,
+} SeriesSnrLte;
+
+static void
+snr_updated (MrmDevice *device,
+             gdouble lte_snr,
+             MrmWindow *self)
+{
+    mrm_graph_step_init (MRM_GRAPH (self->priv->snr_graph));
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->snr_graph), SERIES_SNR_LTE, lte_snr);
+    mrm_graph_step_finish (MRM_GRAPH (self->priv->snr_graph));
+}
+
 static void
 change_current_device (MrmWindow *self,
                        MrmDevice *new_device)
@@ -206,6 +254,21 @@ change_current_device (MrmWindow *self,
             self->priv->io_graph_updated_id = 0;
         }
 
+        if (self->priv->rsrq_graph_updated_id) {
+            g_signal_handler_disconnect (self->priv->current, self->priv->rsrq_graph_updated_id);
+            self->priv->rsrq_graph_updated_id = 0;
+        }
+
+        if (self->priv->rsrp_graph_updated_id) {
+            g_signal_handler_disconnect (self->priv->current, self->priv->rsrp_graph_updated_id);
+            self->priv->rsrp_graph_updated_id = 0;
+        }
+
+        if (self->priv->snr_graph_updated_id) {
+            g_signal_handler_disconnect (self->priv->current, self->priv->snr_graph_updated_id);
+            self->priv->snr_graph_updated_id = 0;
+        }
+
         g_clear_object (&self->priv->current);
 
         /* Clear graphs */
@@ -223,6 +286,12 @@ change_current_device (MrmWindow *self,
         mrm_graph_clear_series (MRM_GRAPH (self->priv->sinr_level_graph), SERIES_SINR_LEVEL_EVDO);
 
         mrm_graph_clear_series (MRM_GRAPH (self->priv->io_graph), SERIES_IO_EVDO);
+
+        mrm_graph_clear_series (MRM_GRAPH (self->priv->rsrq_graph), SERIES_RSRQ_LTE);
+
+        mrm_graph_clear_series (MRM_GRAPH (self->priv->rsrp_graph), SERIES_RSRP_LTE);
+
+        mrm_graph_clear_series (MRM_GRAPH (self->priv->snr_graph), SERIES_SNR_LTE);
     }
 
     if (new_device) {
@@ -244,6 +313,18 @@ change_current_device (MrmWindow *self,
                                                             "io-updated",
                                                             G_CALLBACK (io_updated),
                                                             self);
+        self->priv->rsrq_graph_updated_id = g_signal_connect (new_device,
+                                                              "rsrq-updated",
+                                                              G_CALLBACK (rsrq_updated),
+                                                              self);
+        self->priv->rsrp_graph_updated_id = g_signal_connect (new_device,
+                                                              "rsrp-updated",
+                                                              G_CALLBACK (rsrp_updated),
+                                                              self);
+        self->priv->snr_graph_updated_id = g_signal_connect (new_device,
+                                                             "snr-updated",
+                                                             G_CALLBACK (snr_updated),
+                                                             self);
     }
 }
 
@@ -719,6 +800,15 @@ mrm_window_init (MrmWindow *self)
 
     /* Io graph */
     mrm_graph_setup_series (MRM_GRAPH (self->priv->io_graph), SERIES_IO_EVDO, "EVDO", EVDO_RGB);
+
+    /* RSRQ graph */
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->rsrq_graph), SERIES_RSRQ_LTE, "LTE", LTE_RGB);
+
+    /* RSRP graph */
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->rsrp_graph), SERIES_RSRP_LTE, "LTE", LTE_RGB);
+
+    /* SNR graph */
+    mrm_graph_setup_series (MRM_GRAPH (self->priv->snr_graph), SERIES_SNR_LTE, "LTE", LTE_RGB);
 }
 
 static void
@@ -783,4 +873,7 @@ mrm_window_class_init (MrmWindowClass *klass)
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, ecio_graph);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, sinr_level_graph);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, io_graph);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, rsrq_graph);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, rsrp_graph);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, snr_graph);
 }

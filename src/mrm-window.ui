@@ -334,7 +334,7 @@
                 <property name="left_attach">0</property>
                 <property name="top_attach">0</property>
                 <property name="width">1</property>
-                <property name="height">1</property>
+                <property name="height">2</property>
               </packing>
             </child>
             <child>
@@ -358,6 +358,66 @@
               </packing>
             </child>
             <child>
+              <object class="MrmGraph" id="rsrq_graph">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="title">RSRQ</property>
+                <property name="y-max">-3</property>
+                <property name="y-min">-20</property>
+                <property name="y-n-separators">4</property>
+                <property name="y-units">dB</property>
+                <property name="n-series">1</property>
+                <property name="hexpand">True</property>
+                <property name="vexpand">True</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">1</property>
+                <property name="width">1</property>
+                <property name="height">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="MrmGraph" id="rsrp_graph">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="title">RSRP</property>
+                <property name="y-max">-44</property>
+                <property name="y-min">-140</property>
+                <property name="y-n-separators">4</property>
+                <property name="y-units">dBm</property>
+                <property name="n-series">1</property>
+                <property name="hexpand">True</property>
+                <property name="vexpand">True</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">2</property>
+                <property name="width">1</property>
+                <property name="height">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="MrmGraph" id="snr_graph">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="title">S/R</property>
+                <property name="y-max">50</property>
+                <property name="y-min">-50</property>
+                <property name="y-n-separators">4</property>
+                <property name="y-units">dBm</property>
+                <property name="n-series">1</property>
+                <property name="hexpand">True</property>
+                <property name="vexpand">True</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">2</property>
+                <property name="width">1</property>
+                <property name="height">1</property>
+              </packing>
+            </child>
+            <child>
               <object class="MrmGraph" id="sinr_level_graph">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
@@ -372,7 +432,7 @@
               </object>
               <packing>
                 <property name="left_attach">0</property>
-                <property name="top_attach">1</property>
+                <property name="top_attach">3</property>
                 <property name="width">1</property>
                 <property name="height">1</property>
               </packing>
@@ -392,7 +452,7 @@
               </object>
               <packing>
                 <property name="left_attach">1</property>
-                <property name="top_attach">1</property>
+                <property name="top_attach">3</property>
                 <property name="width">1</property>
                 <property name="height">1</property>
               </packing>
