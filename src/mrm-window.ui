@@ -339,6 +339,7 @@
                     <property name="n-series">5</property>
                     <property name="hexpand">True</property>
                     <property name="vexpand">True</property>
+                    <property name="legend-position">none</property>
                   </object>
                 </child>
               </object>
@@ -366,6 +367,7 @@
                     <property name="n-series">5</property>
                     <property name="hexpand">True</property>
                     <property name="vexpand">True</property>
+                    <property name="legend-position">none</property>
                   </object>
                 </child>
               </object>
@@ -393,6 +395,7 @@
                     <property name="n-series">1</property>
                     <property name="hexpand">True</property>
                     <property name="vexpand">True</property>
+                    <property name="legend-position">none</property>
                   </object>
                 </child>
               </object>
@@ -420,6 +423,7 @@
                     <property name="n-series">1</property>
                     <property name="hexpand">True</property>
                     <property name="vexpand">True</property>
+                    <property name="legend-position">none</property>
                   </object>
                 </child>
               </object>
@@ -447,6 +451,7 @@
                     <property name="n-series">1</property>
                     <property name="hexpand">True</property>
                     <property name="vexpand">True</property>
+                    <property name="legend-position">none</property>
                   </object>
                 </child>
               </object>
@@ -474,6 +479,7 @@
                     <property name="n-series">1</property>
                     <property name="hexpand">True</property>
                     <property name="vexpand">True</property>
+                    <property name="legend-position">none</property>
                   </object>
                 </child>
               </object>
@@ -501,6 +507,7 @@
                     <property name="n-series">1</property>
                     <property name="hexpand">True</property>
                     <property name="vexpand">True</property>
+                    <property name="legend-position">none</property>
                   </object>
                 </child>
               </object>
