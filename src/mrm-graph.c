@@ -293,7 +293,7 @@ graph_background_pattern_create (MrmGraph *self)
                            GTK_STATE_FLAG_NORMAL,
                            GTK_STYLE_PROPERTY_FONT, &font_desc,
                            NULL);
-    pango_font_description_set_size (font_desc, 0.8 * FONTSIZE * PANGO_SCALE);
+    pango_font_description_set_size (font_desc, FONTSIZE * PANGO_SCALE);
     pango_layout_set_font_description (layout, font_desc);
     pango_font_description_free (font_desc);
 
