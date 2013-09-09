@@ -49,6 +49,19 @@ struct _MrmWindowPrivate {
     GtkWidget *graph_legend_lte_icon;
     GtkWidget *graph_legend_cdma_icon;
     GtkWidget *graph_legend_evdo_icon;
+    GtkWidget *graph_legend_gsm_rssi_value_label;
+    GtkWidget *graph_legend_umts_rssi_value_label;
+    GtkWidget *graph_legend_lte_rssi_value_label;
+    GtkWidget *graph_legend_cdma_rssi_value_label;
+    GtkWidget *graph_legend_evdo_rssi_value_label;
+    GtkWidget *graph_legend_umts_ecio_value_label;
+    GtkWidget *graph_legend_cdma_ecio_value_label;
+    GtkWidget *graph_legend_evdo_ecio_value_label;
+    GtkWidget *graph_legend_evdo_sinr_level_value_label;
+    GtkWidget *graph_legend_evdo_io_value_label;
+    GtkWidget *graph_legend_lte_rsrq_value_label;
+    GtkWidget *graph_legend_lte_rsrp_value_label;
+    GtkWidget *graph_legend_lte_snr_value_label;
     GtkWidget *rssi_graph;
     guint rssi_graph_updated_id;
     GtkWidget *ecio_graph;
@@ -130,11 +143,26 @@ rssi_updated (MrmDevice *device,
               MrmWindow *self)
 {
     mrm_graph_step_init (MRM_GRAPH (self->priv->rssi_graph));
-    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_GSM,  gsm_rssi);
-    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_UMTS, umts_rssi);
-    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_LTE,  lte_rssi);
-    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_CDMA, cdma_rssi);
-    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rssi_graph), SERIES_RSSI_EVDO, evdo_rssi);
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rssi_graph),
+                              SERIES_RSSI_GSM,
+                              gsm_rssi,
+                              GTK_LABEL (self->priv->graph_legend_gsm_rssi_value_label));
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rssi_graph),
+                              SERIES_RSSI_UMTS,
+                              umts_rssi,
+                              GTK_LABEL (self->priv->graph_legend_umts_rssi_value_label));
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rssi_graph),
+                              SERIES_RSSI_LTE,
+                              lte_rssi,
+                              GTK_LABEL (self->priv->graph_legend_lte_rssi_value_label));
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rssi_graph),
+                              SERIES_RSSI_CDMA,
+                              cdma_rssi,
+                              GTK_LABEL (self->priv->graph_legend_cdma_rssi_value_label));
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rssi_graph),
+                              SERIES_RSSI_EVDO,
+                              evdo_rssi,
+                              GTK_LABEL (self->priv->graph_legend_cdma_rssi_value_label));
     mrm_graph_step_finish (MRM_GRAPH (self->priv->rssi_graph));
 }
 
@@ -152,9 +180,18 @@ ecio_updated (MrmDevice *device,
               MrmWindow *self)
 {
     mrm_graph_step_init (MRM_GRAPH (self->priv->ecio_graph));
-    mrm_graph_step_set_value (MRM_GRAPH (self->priv->ecio_graph), SERIES_ECIO_UMTS, umts_ecio);
-    mrm_graph_step_set_value (MRM_GRAPH (self->priv->ecio_graph), SERIES_ECIO_CDMA, cdma_ecio);
-    mrm_graph_step_set_value (MRM_GRAPH (self->priv->ecio_graph), SERIES_ECIO_EVDO, evdo_ecio);
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->ecio_graph),
+                              SERIES_ECIO_UMTS,
+                              umts_ecio,
+                              GTK_LABEL (self->priv->graph_legend_umts_ecio_value_label));
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->ecio_graph),
+                              SERIES_ECIO_CDMA,
+                              cdma_ecio,
+                              GTK_LABEL (self->priv->graph_legend_cdma_ecio_value_label));
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->ecio_graph),
+                              SERIES_ECIO_EVDO,
+                              evdo_ecio,
+                              GTK_LABEL (self->priv->graph_legend_evdo_ecio_value_label));
     mrm_graph_step_finish (MRM_GRAPH (self->priv->ecio_graph));
 }
 
@@ -168,7 +205,10 @@ sinr_level_updated (MrmDevice *device,
                     MrmWindow *self)
 {
     mrm_graph_step_init (MRM_GRAPH (self->priv->sinr_level_graph));
-    mrm_graph_step_set_value (MRM_GRAPH (self->priv->sinr_level_graph), SERIES_SINR_LEVEL_EVDO, evdo_sinr_level);
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->sinr_level_graph),
+                              SERIES_SINR_LEVEL_EVDO,
+                              evdo_sinr_level,
+                              GTK_LABEL (self->priv->graph_legend_evdo_sinr_level_value_label));
     mrm_graph_step_finish (MRM_GRAPH (self->priv->sinr_level_graph));
 }
 
@@ -182,7 +222,10 @@ io_updated (MrmDevice *device,
             MrmWindow *self)
 {
     mrm_graph_step_init (MRM_GRAPH (self->priv->io_graph));
-    mrm_graph_step_set_value (MRM_GRAPH (self->priv->io_graph), SERIES_IO_EVDO, evdo_io);
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->io_graph),
+                              SERIES_IO_EVDO,
+                              evdo_io,
+                              GTK_LABEL (self->priv->graph_legend_evdo_io_value_label));
     mrm_graph_step_finish (MRM_GRAPH (self->priv->io_graph));
 }
 
@@ -196,7 +239,10 @@ rsrq_updated (MrmDevice *device,
               MrmWindow *self)
 {
     mrm_graph_step_init (MRM_GRAPH (self->priv->rsrq_graph));
-    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rsrq_graph), SERIES_RSRQ_LTE, lte_rsrq);
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rsrq_graph),
+                              SERIES_RSRQ_LTE,
+                              lte_rsrq,
+                              GTK_LABEL (self->priv->graph_legend_lte_rsrq_value_label));
     mrm_graph_step_finish (MRM_GRAPH (self->priv->rsrq_graph));
 }
 
@@ -210,7 +256,10 @@ rsrp_updated (MrmDevice *device,
               MrmWindow *self)
 {
     mrm_graph_step_init (MRM_GRAPH (self->priv->rsrp_graph));
-    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rsrp_graph), SERIES_RSRP_LTE, lte_rsrp);
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->rsrp_graph),
+                              SERIES_RSRP_LTE,
+                              lte_rsrp,
+                              GTK_LABEL (self->priv->graph_legend_lte_rsrp_value_label));
     mrm_graph_step_finish (MRM_GRAPH (self->priv->rsrp_graph));
 }
 
@@ -224,7 +273,10 @@ snr_updated (MrmDevice *device,
              MrmWindow *self)
 {
     mrm_graph_step_init (MRM_GRAPH (self->priv->snr_graph));
-    mrm_graph_step_set_value (MRM_GRAPH (self->priv->snr_graph), SERIES_SNR_LTE, lte_snr);
+    mrm_graph_step_set_value (MRM_GRAPH (self->priv->snr_graph),
+                              SERIES_SNR_LTE,
+                              lte_snr,
+                              GTK_LABEL (self->priv->graph_legend_lte_snr_value_label));
     mrm_graph_step_finish (MRM_GRAPH (self->priv->snr_graph));
 }
 
@@ -895,4 +947,18 @@ mrm_window_class_init (MrmWindowClass *klass)
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_lte_icon);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_cdma_icon);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_evdo_icon);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_gsm_rssi_value_label);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_umts_rssi_value_label);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_lte_rssi_value_label);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_cdma_rssi_value_label);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_evdo_rssi_value_label);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_umts_ecio_value_label);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_cdma_ecio_value_label);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_evdo_ecio_value_label);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_evdo_sinr_level_value_label);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_evdo_io_value_label);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_lte_rsrq_value_label);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_lte_rsrp_value_label);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_lte_snr_value_label);
+
 }

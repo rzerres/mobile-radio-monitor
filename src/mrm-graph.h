@@ -70,7 +70,8 @@ void mrm_graph_clear_series (MrmGraph *self,
 void mrm_graph_step_init      (MrmGraph *self);
 void mrm_graph_step_set_value (MrmGraph *self,
                                guint series_index,
-                               gdouble value);
+                               gdouble value,
+                               GtkLabel *additional_label);
 void mrm_graph_step_finish    (MrmGraph *self);
 
 G_END_DECLS

@@ -214,7 +214,8 @@ mrm_graph_step_init (MrmGraph *self)
 void
 mrm_graph_step_set_value (MrmGraph *self,
                           guint series_index,
-                          gdouble value)
+                          gdouble value,
+                          GtkLabel *additional_label)
 {
     g_assert_cmpuint (series_index, <, self->priv->n_series);
     g_assert_cmpuint (self->priv->step_index, <, NUM_POINTS);
@@ -223,15 +224,19 @@ mrm_graph_step_set_value (MrmGraph *self,
         CLAMP (value, self->priv->y_min, self->priv->y_max);
 
     if (value < self->priv->y_min ||
-        value > self->priv->y_max)
+        value > self->priv->y_max) {
         gtk_label_set_text (GTK_LABEL (self->priv->series[series_index].box_value), "N/A");
-    else {
+        if (additional_label)
+            gtk_label_set_text (additional_label, "N/A");
+    } else {
         gchar *str;
 
         str = g_strdup_printf ("%.2lf %s",
                                self->priv->series[series_index].data[self->priv->step_index],
                                self->priv->y_units);
         gtk_label_set_text (GTK_LABEL (self->priv->series[series_index].box_value), str);
+        if (additional_label)
+            gtk_label_set_text (additional_label, str);
         g_free (str);
     }
 }

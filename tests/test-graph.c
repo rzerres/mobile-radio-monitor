@@ -26,7 +26,7 @@ update (gpointer unused)
     static gdouble value = -113.0;
 
     mrm_graph_step_init (MRM_GRAPH (graph));
-    mrm_graph_step_set_value (MRM_GRAPH (graph), 0, value);
+    mrm_graph_step_set_value (MRM_GRAPH (graph), 0, value, NULL);
     mrm_graph_step_finish (MRM_GRAPH (graph));
 
     value += 1.0;
