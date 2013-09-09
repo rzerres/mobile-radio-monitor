@@ -38,7 +38,7 @@
 
 /* Right margin; to account for the space needed to display the
  * horizontal line label */
-#define RIGHT_LABEL_MARGIN (7 * FONTSIZE)
+#define RIGHT_LABEL_MARGIN (8 * FONTSIZE)
 
 /* Bottom label vertical margin */
 #define BOTTOM_LABEL_MARGIN 15
@@ -348,7 +348,7 @@ graph_background_pattern_create (MrmGraph *self)
         pango_layout_set_text (layout, caption, -1);
         pango_layout_get_extents (layout, NULL, &extents);
         cairo_move_to (cr,
-                       self->priv->draw_width - INDENT - 23,
+                       self->priv->draw_width - INDENT - 30,
                        y - 1.0 * extents.height / PANGO_SCALE / 2);
         pango_cairo_show_layout (cr, layout);
         g_free (caption);
