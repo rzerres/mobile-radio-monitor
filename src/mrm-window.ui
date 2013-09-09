@@ -314,22 +314,33 @@
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="column-homogeneous">True</property>
+            <property name="margin-left">5</property>
+            <property name="margin-right">5</property>
+            <property name="margin-top">5</property>
+            <property name="margin-bottom">5</property>
             <property name="hexpand">True</property>
             <property name="vexpand">True</property>
             <property name="row-spacing">5</property>
             <property name="column-spacing">5</property>
             <child>
-              <object class="MrmGraph" id="rssi_graph">
+              <object class="GtkFrame" id="rssi_graph_frame">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="title">RSSI</property>
-                <property name="y-max">-49.0</property>
-                <property name="y-min">-113.0</property>
-                <property name="y-n-separators">4</property>
-                <property name="y-units">dBm</property>
-                <property name="n-series">5</property>
-                <property name="hexpand">True</property>
-                <property name="vexpand">True</property>
+                <property name="shadow_type">in</property>
+                <child>
+                  <object class="MrmGraph" id="rssi_graph">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="title">RSSI</property>
+                    <property name="y-max">-49.0</property>
+                    <property name="y-min">-113.0</property>
+                    <property name="y-n-separators">4</property>
+                    <property name="y-units">dBm</property>
+                    <property name="n-series">5</property>
+                    <property name="hexpand">True</property>
+                    <property name="vexpand">True</property>
+                  </object>
+                </child>
               </object>
               <packing>
                 <property name="left_attach">0</property>
@@ -339,17 +350,24 @@
               </packing>
             </child>
             <child>
-              <object class="MrmGraph" id="ecio_graph">
+              <object class="GtkFrame" id="ecio_graph_frame">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="title">Ec/Io</property>
-                <property name="y-max">0.0</property>
-                <property name="y-min">-50.0</property>
-                <property name="y-n-separators">4</property>
-                <property name="y-units">dBm</property>
-                <property name="n-series">5</property>
-                <property name="hexpand">True</property>
-                <property name="vexpand">True</property>
+                <property name="shadow_type">in</property>
+                <child>
+                  <object class="MrmGraph" id="ecio_graph">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="title">Ec/Io</property>
+                    <property name="y-max">0.0</property>
+                    <property name="y-min">-50.0</property>
+                    <property name="y-n-separators">4</property>
+                    <property name="y-units">dBm</property>
+                    <property name="n-series">5</property>
+                    <property name="hexpand">True</property>
+                    <property name="vexpand">True</property>
+                  </object>
+                </child>
               </object>
               <packing>
                 <property name="left_attach">1</property>
@@ -359,17 +377,24 @@
               </packing>
             </child>
             <child>
-              <object class="MrmGraph" id="rsrq_graph">
+              <object class="GtkFrame" id="rsrq_graph_frame">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="title">RSRQ</property>
-                <property name="y-max">-3</property>
-                <property name="y-min">-20</property>
-                <property name="y-n-separators">4</property>
-                <property name="y-units">dB</property>
-                <property name="n-series">1</property>
-                <property name="hexpand">True</property>
-                <property name="vexpand">True</property>
+                <property name="shadow_type">in</property>
+                <child>
+                  <object class="MrmGraph" id="rsrq_graph">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="title">RSRQ</property>
+                    <property name="y-max">-3</property>
+                    <property name="y-min">-20</property>
+                    <property name="y-n-separators">4</property>
+                    <property name="y-units">dB</property>
+                    <property name="n-series">1</property>
+                    <property name="hexpand">True</property>
+                    <property name="vexpand">True</property>
+                  </object>
+                </child>
               </object>
               <packing>
                 <property name="left_attach">1</property>
@@ -379,17 +404,24 @@
               </packing>
             </child>
             <child>
-              <object class="MrmGraph" id="rsrp_graph">
+              <object class="GtkFrame" id="rsrp_graph_frame">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="title">RSRP</property>
-                <property name="y-max">-44</property>
-                <property name="y-min">-140</property>
-                <property name="y-n-separators">4</property>
-                <property name="y-units">dBm</property>
-                <property name="n-series">1</property>
-                <property name="hexpand">True</property>
-                <property name="vexpand">True</property>
+                <property name="shadow_type">in</property>
+                <child>
+                  <object class="MrmGraph" id="rsrp_graph">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="title">RSRP</property>
+                    <property name="y-max">-44</property>
+                    <property name="y-min">-140</property>
+                    <property name="y-n-separators">4</property>
+                    <property name="y-units">dBm</property>
+                    <property name="n-series">1</property>
+                    <property name="hexpand">True</property>
+                    <property name="vexpand">True</property>
+                  </object>
+                </child>
               </object>
               <packing>
                 <property name="left_attach">0</property>
@@ -399,17 +431,24 @@
               </packing>
             </child>
             <child>
-              <object class="MrmGraph" id="snr_graph">
+              <object class="GtkFrame" id="snr_graph_frame">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="title">S/R</property>
-                <property name="y-max">50</property>
-                <property name="y-min">-50</property>
-                <property name="y-n-separators">4</property>
-                <property name="y-units">dBm</property>
-                <property name="n-series">1</property>
-                <property name="hexpand">True</property>
-                <property name="vexpand">True</property>
+                <property name="shadow_type">in</property>
+                <child>
+                  <object class="MrmGraph" id="snr_graph">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="title">S/R</property>
+                    <property name="y-max">50</property>
+                    <property name="y-min">-50</property>
+                    <property name="y-n-separators">4</property>
+                    <property name="y-units">dBm</property>
+                    <property name="n-series">1</property>
+                    <property name="hexpand">True</property>
+                    <property name="vexpand">True</property>
+                  </object>
+                </child>
               </object>
               <packing>
                 <property name="left_attach">1</property>
@@ -419,17 +458,24 @@
               </packing>
             </child>
             <child>
-              <object class="MrmGraph" id="sinr_level_graph">
+              <object class="GtkFrame" id="sinr_level_graph_frame">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="title">SINR level</property>
-                <property name="y-max">9.0</property>
-                <property name="y-min">-9.0</property>
-                <property name="y-n-separators">4</property>
-                <property name="y-units">dB</property>
-                <property name="n-series">1</property>
-                <property name="hexpand">True</property>
-                <property name="vexpand">True</property>
+                <property name="shadow_type">in</property>
+                <child>
+                  <object class="MrmGraph" id="sinr_level_graph">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="title">SINR level</property>
+                    <property name="y-max">9.0</property>
+                    <property name="y-min">-9.0</property>
+                    <property name="y-n-separators">4</property>
+                    <property name="y-units">dB</property>
+                    <property name="n-series">1</property>
+                    <property name="hexpand">True</property>
+                    <property name="vexpand">True</property>
+                  </object>
+                </child>
               </object>
               <packing>
                 <property name="left_attach">0</property>
@@ -439,17 +485,24 @@
               </packing>
             </child>
             <child>
-              <object class="MrmGraph" id="io_graph">
+              <object class="GtkFrame" id="io_graph_frame">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="title">Io</property>
-                <property name="y-max">0</property>
-                <property name="y-min">-106</property>
-                <property name="y-n-separators">4</property>
-                <property name="y-units">dBm</property>
-                <property name="n-series">1</property>
-                <property name="hexpand">True</property>
-                <property name="vexpand">True</property>
+                <property name="shadow_type">in</property>
+                <child>
+                  <object class="MrmGraph" id="io_graph">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="title">Io</property>
+                    <property name="y-max">0</property>
+                    <property name="y-min">-106</property>
+                    <property name="y-n-separators">4</property>
+                    <property name="y-units">dBm</property>
+                    <property name="n-series">1</property>
+                    <property name="hexpand">True</property>
+                    <property name="vexpand">True</property>
+                  </object>
+                </child>
               </object>
               <packing>
                 <property name="left_attach">1</property>

@@ -612,7 +612,7 @@ constructed (GObject *object)
     gtk_widget_set_hexpand (self->priv->legend_box, TRUE);
     gtk_widget_set_margin_left (self->priv->legend_box, 16);
     gtk_widget_set_margin_top (self->priv->legend_box, 4);
-    gtk_widget_set_margin_bottom (self->priv->legend_box, 8);
+    gtk_widget_set_margin_bottom (self->priv->legend_box, 4);
     gtk_box_pack_start (GTK_BOX (self), self->priv->legend_box, FALSE, TRUE, 0);
     gtk_widget_show (self->priv->legend_box);
 
