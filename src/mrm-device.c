@@ -38,6 +38,7 @@ enum {
     SIGNAL_ECIO_UPDATED,
     SIGNAL_SINR_LEVEL_UPDATED,
     SIGNAL_IO_UPDATED,
+    SIGNAL_RSRQ_UPDATED,
     SIGNAL_LAST
 };
 
@@ -112,6 +113,7 @@ qmi_client_nas_get_signal_info_ready (QmiClientNas *client,
         gint16 evdo_ecio = -1;
         QmiNasEvdoSinrLevel evdo_sinr_level = QMI_NAS_EVDO_SINR_LEVEL_0;
         gint32 evdo_io = -125;
+        gint8 lte_rsrq = -125;
         gboolean has_gsm;
         gboolean has_umts;
         gboolean has_lte;
@@ -121,7 +123,7 @@ qmi_client_nas_get_signal_info_ready (QmiClientNas *client,
         /* Get signal info */
         has_gsm = qmi_message_nas_get_signal_info_output_get_gsm_signal_strength (output, &gsm_rssi, NULL);
         has_umts = qmi_message_nas_get_signal_info_output_get_wcdma_signal_strength (output, &umts_rssi, &umts_ecio, NULL);
-        has_lte = qmi_message_nas_get_signal_info_output_get_lte_signal_strength (output, &lte_rssi, NULL, NULL, NULL, NULL);
+        has_lte = qmi_message_nas_get_signal_info_output_get_lte_signal_strength (output, &lte_rssi, &lte_rsrq, NULL, NULL, NULL);
         has_cdma = qmi_message_nas_get_signal_info_output_get_cdma_signal_strength (output, &cdma_rssi, &cdma_ecio, NULL);
         has_evdo = qmi_message_nas_get_signal_info_output_get_hdr_signal_strength (output, &evdo_rssi, &evdo_ecio, &evdo_sinr_level, &evdo_io, NULL);
 
@@ -150,6 +152,11 @@ qmi_client_nas_get_signal_info_ready (QmiClientNas *client,
                        signals[SIGNAL_IO_UPDATED],
                        0,
                        has_evdo ? ((gdouble)evdo_io) : -G_MAXDOUBLE);
+
+        g_signal_emit (self,
+                       signals[SIGNAL_RSRQ_UPDATED],
+                       0,
+                       has_lte ? ((gdouble)lte_rsrq) : -G_MAXDOUBLE);
     }
 
     if (output)
@@ -1149,6 +1156,17 @@ mrm_device_class_init (MrmDeviceClass *klass)
                       G_OBJECT_CLASS_TYPE (object_class),
                       G_SIGNAL_RUN_FIRST,
                       G_STRUCT_OFFSET (MrmDeviceClass, io_updated),
+                      NULL, NULL,
+                      g_cclosure_marshal_generic,
+					  G_TYPE_NONE,
+                      1,
+                      G_TYPE_DOUBLE);
+
+    signals[SIGNAL_RSRQ_UPDATED] =
+        g_signal_new ("rsrq-updated",
+                      G_OBJECT_CLASS_TYPE (object_class),
+                      G_SIGNAL_RUN_FIRST,
+                      G_STRUCT_OFFSET (MrmDeviceClass, rsrq_updated),
                       NULL, NULL,
                       g_cclosure_marshal_generic,
 					  G_TYPE_NONE,

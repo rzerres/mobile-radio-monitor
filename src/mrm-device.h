@@ -67,6 +67,9 @@ struct _MrmDeviceClass {
 
     void (*io_updated) (MrmDevice *device,
                         gdouble evdo_io);
+
+    void (*rsrq_updated) (MrmDevice *device,
+                          gdouble lte_rsrq);
 };
 
 GType mrm_device_get_type (void) G_GNUC_CONST;
