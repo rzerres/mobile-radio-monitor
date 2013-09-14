@@ -133,14 +133,6 @@ error_dialog (const gchar *primary_text,
 /******************************************************************************/
 
 static void
-select_device_list_tab (MrmWindow *self)
-{
-    gtk_header_bar_set_title (GTK_HEADER_BAR (self->priv->header_bar), "Mobile Radio Monitor");
-    gtk_widget_set_sensitive (self->priv->back_button, FALSE);
-    gtk_notebook_set_current_page (GTK_NOTEBOOK (self->priv->notebook), NOTEBOOK_TAB_DEVICE_LIST);
-}
-
-static void
 act_updated (MrmDevice *device,
              MrmDeviceAct act,
              MrmWindow *self)
@@ -443,21 +435,44 @@ change_current_device (MrmWindow *self,
     }
 }
 
-static void
-select_signal_info_tab (MrmWindow *self,
-                        MrmDevice *device)
-{
-    gchar *title;
+/******************************************************************************/
 
-    title = g_strdup_printf ("Mobile Radio Monitor - %s", mrm_device_get_model (device));
-    gtk_header_bar_set_title (GTK_HEADER_BAR (self->priv->header_bar), title);
-    g_free (title);
+static void
+go_back_cb (GSimpleAction *action,
+            GVariant      *parameter,
+            gpointer       user_data)
+{
+    MrmWindow *self = MRM_WINDOW (user_data);
+
+    gtk_header_bar_set_title (GTK_HEADER_BAR (self->priv->header_bar), "Mobile Radio Monitor");
+    gtk_widget_set_sensitive (self->priv->back_button, FALSE);
+    gtk_notebook_set_current_page (GTK_NOTEBOOK (self->priv->notebook), NOTEBOOK_TAB_DEVICE_LIST);
+}
+
+static void
+go_signal_tab_cb (GSimpleAction *action,
+                  GVariant      *parameter,
+                  gpointer       user_data)
+{
+    MrmWindow *self = MRM_WINDOW (user_data);
+
+    if (self->priv->current) {
+        gchar *title;
+
+        title = g_strdup_printf ("Mobile Radio Monitor - %s", mrm_device_get_model (self->priv->current));
+        gtk_header_bar_set_title (GTK_HEADER_BAR (self->priv->header_bar), title);
+        g_free (title);
+    }
+
     gtk_widget_set_sensitive (self->priv->back_button, TRUE);
     gtk_notebook_set_current_page (GTK_NOTEBOOK (self->priv->notebook), NOTEBOOK_TAB_SIGNAL_INFO);
-
-    /* Setup device to use */
-    change_current_device (self, device);
 }
+
+static GActionEntry win_entries[] = {
+    /* go */
+    { "go-back",       go_back_cb,       NULL, "false", NULL },
+    { "go-signal-tab", go_signal_tab_cb, NULL, "false", NULL },
+};
 
 /******************************************************************************/
 
@@ -465,10 +480,14 @@ void
 mrm_window_open_device (MrmWindow *self,
                         MrmDevice *device)
 {
-    select_signal_info_tab (self, device);
+    /* Setup device to use */
+    change_current_device (self, device);
 
     /* Start NAS monitoring */
     mrm_device_start_nas (device, NULL, NULL);
+
+    /* Go to the signal tab */
+    g_action_group_activate_action (G_ACTION_GROUP (self), "go-signal-tab", NULL);
 }
 
 /******************************************************************************/
@@ -752,7 +771,7 @@ device_removed_cb (MrmApp *application,
          g_str_equal (mrm_device_get_name (self->priv->current),
                       mrm_device_get_name (device)))) {
         change_current_device (self, NULL);
-        select_device_list_tab (self);
+        g_action_group_activate_action (G_ACTION_GROUP (self), "go-back", NULL);
     }
 
     g_list_free (children);
@@ -832,15 +851,6 @@ setup_device_list_updates (MrmWindow *self)
 
 /******************************************************************************/
 
-static void
-back_button_clicked (GtkButton *button,
-                     MrmWindow *self)
-{
-    select_device_list_tab (self);
-}
-
-/******************************************************************************/
-
 GtkWidget *
 mrm_window_new (MrmApp *application)
 {
@@ -867,10 +877,9 @@ mrm_window_init (MrmWindow *self)
 
     gtk_widget_init_template (GTK_WIDGET (self));
 
-    g_signal_connect (self->priv->back_button,
-                      "clicked",
-                      G_CALLBACK (back_button_clicked),
-                      self);
+    g_action_map_add_action_entries (G_ACTION_MAP (self),
+                                     win_entries, G_N_ELEMENTS (win_entries),
+                                     self);
 
     g_signal_connect_swapped (self->priv->device_list_box,
                               "row-activated",
