@@ -91,7 +91,7 @@ act_updated (MrmDevice *device,
              MrmDeviceAct act,
              MrmSignalTab *self)
 {
-    gtk_widget_set_sensitive (self->priv->rssi_graph_frame, TRUE);
+    gtk_widget_set_sensitive (self->priv->rssi_graph_frame, act != 0);
     gtk_widget_set_sensitive (self->priv->ecio_graph_frame,
                               (act & (MRM_DEVICE_ACT_UMTS |
                                       MRM_DEVICE_ACT_CDMA |

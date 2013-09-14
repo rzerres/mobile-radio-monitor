@@ -77,6 +77,10 @@ act_updated (MrmDevice *device,
              MrmDeviceAct act,
              MrmPowerTab *self)
 {
+    gtk_widget_set_sensitive (self->priv->rx0_graph_frame, act != 0);
+    gtk_widget_set_sensitive (self->priv->rx1_graph_frame, act != 0);
+    gtk_widget_set_sensitive (self->priv->tx_graph_frame, act != 0);
+
     gtk_widget_set_sensitive (self->priv->legend_gsm_box,
                               (act & MRM_DEVICE_ACT_GSM));
     gtk_widget_set_sensitive (self->priv->legend_umts_box,
