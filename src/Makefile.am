@@ -11,6 +11,7 @@ mobile_radio_monitor_SOURCES = \
 	mrm-color-icon.h mrm-color-icon.c \
 	mrm-graph.h mrm-graph.c \
 	mrm-device.h mrm-device.c \
+	mrm-signal-tab.h mrm-signal-tab.c \
 	mrm-window.h mrm-window.c \
 	mrm-app.h mrm-app.c \
 	mrm-main.c
@@ -96,4 +97,5 @@ CLEANFILES = \
 	mrm-enum-types.h mrm-enum-types.c
 
 EXTRA_DIST = \
-	mrm-window.ui
+	mrm-window.ui \
+	mrm-signal-tab.ui
