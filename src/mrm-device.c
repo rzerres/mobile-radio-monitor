@@ -205,6 +205,7 @@ signal_info_reload_cb (MrmDevice *self)
                                     NULL,
                                     (GAsyncReadyCallback)qmi_client_nas_get_signal_info_ready,
                                     g_object_ref (self));
+    return TRUE;
 }
 
 /*****************************************************************************/
