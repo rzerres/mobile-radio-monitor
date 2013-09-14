@@ -42,6 +42,9 @@ enum {
     SIGNAL_RSRQ_UPDATED,
     SIGNAL_RSRP_UPDATED,
     SIGNAL_SNR_UPDATED,
+    SIGNAL_RX0_UPDATED,
+    SIGNAL_RX1_UPDATED,
+    SIGNAL_TX_UPDATED,
     SIGNAL_LAST
 };
 
@@ -66,9 +69,213 @@ struct _MrmDevicePrivate {
     QmiClient *dms;
     QmiClient *nas;
 
-    /* Signal info updates handling */
-    guint signal_info_updated_id;
+    /* Info updates handling */
+    guint info_updated_id;
 };
+
+/*****************************************************************************/
+/* Reload power info */
+
+typedef struct {
+    MrmDevice *self;
+    MrmDeviceAct act;
+    guint current_i;
+
+    gboolean has_gsm;
+    gdouble gsm_rx0;
+    gdouble gsm_rx1;
+    gdouble gsm_tx;
+
+    gboolean has_umts;
+    gdouble umts_rx0;
+    gdouble umts_rx1;
+    gdouble umts_tx;
+
+    gboolean has_lte;
+    gdouble lte_rx0;
+    gdouble lte_rx1;
+    gdouble lte_tx;
+
+    gboolean has_cdma;
+    gdouble cdma_rx0;
+    gdouble cdma_rx1;
+    gdouble cdma_tx;
+
+    gboolean has_evdo;
+    gdouble evdo_rx0;
+    gdouble evdo_rx1;
+    gdouble evdo_tx;
+} ReloadPowerInfoContext;
+
+static void
+reload_power_info_context_complete (ReloadPowerInfoContext *ctx)
+{
+    g_signal_emit (ctx->self,
+                   signals[SIGNAL_RX0_UPDATED],
+                   0,
+                   ctx->has_gsm  ? ctx->gsm_rx0  : -G_MAXDOUBLE,
+                   ctx->has_umts ? ctx->umts_rx0 : -G_MAXDOUBLE,
+                   ctx->has_lte  ? ctx->lte_rx0  : -G_MAXDOUBLE,
+                   ctx->has_cdma ? ctx->cdma_rx0 : -G_MAXDOUBLE,
+                   ctx->has_evdo ? ctx->evdo_rx0 : -G_MAXDOUBLE);
+
+    g_signal_emit (ctx->self,
+                   signals[SIGNAL_RX1_UPDATED],
+                   0,
+                   ctx->has_gsm  ? ctx->gsm_rx1  : -G_MAXDOUBLE,
+                   ctx->has_umts ? ctx->umts_rx1 : -G_MAXDOUBLE,
+                   ctx->has_lte  ? ctx->lte_rx1  : -G_MAXDOUBLE,
+                   ctx->has_cdma ? ctx->cdma_rx1 : -G_MAXDOUBLE,
+                   ctx->has_evdo ? ctx->evdo_rx1 : -G_MAXDOUBLE);
+
+    g_signal_emit (ctx->self,
+                   signals[SIGNAL_TX_UPDATED],
+                   0,
+                   ctx->has_gsm ?  ctx->gsm_tx  : -G_MAXDOUBLE,
+                   ctx->has_umts ? ctx->umts_tx : -G_MAXDOUBLE,
+                   ctx->has_lte ?  ctx->lte_tx  : -G_MAXDOUBLE,
+                   ctx->has_cdma ? ctx->cdma_tx : -G_MAXDOUBLE,
+                   ctx->has_evdo ? ctx->evdo_tx : -G_MAXDOUBLE);
+
+    g_object_unref (ctx->self);
+    g_slice_free (ReloadPowerInfoContext, ctx);
+}
+
+static void reload_power_info_context_step (ReloadPowerInfoContext *ctx);
+
+static void
+qmi_client_nas_get_tx_rx_info_ready (QmiClientNas *client,
+                                     GAsyncResult *res,
+                                     ReloadPowerInfoContext *ctx)
+{
+    QmiMessageNasGetTxRxInfoOutput *output;
+    GError *error = NULL;
+
+    output = qmi_client_nas_get_tx_rx_info_finish (client, res, &error);
+    if (!output || !qmi_message_nas_get_tx_rx_info_output_get_result (output, &error)) {
+        g_warning ("Error loading tx/rx info: %s", error->message);
+        g_error_free (error);
+    } else {
+        gboolean rx0_tuned = FALSE;
+        gint32 rx0 = 0;
+        gboolean rx1_tuned = FALSE;
+        gint32 rx1 = 0;
+        gboolean in_traffic = FALSE;
+        gint32 tx = 0;
+
+        qmi_message_nas_get_tx_rx_info_output_get_rx_chain_0_info (output, &rx0_tuned, &rx0, NULL, NULL, NULL, NULL, NULL);
+        qmi_message_nas_get_tx_rx_info_output_get_rx_chain_1_info (output, &rx1_tuned, &rx1, NULL, NULL, NULL, NULL, NULL);
+        qmi_message_nas_get_tx_rx_info_output_get_tx_info (output, &in_traffic, &tx, NULL);
+
+        switch (1 << ctx->current_i) {
+        case MRM_DEVICE_ACT_GSM:
+            ctx->has_gsm = TRUE;
+            ctx->gsm_rx0 = rx0_tuned ? (0.1 * ((gdouble)rx0)) : -G_MAXDOUBLE;
+            ctx->gsm_rx1 = rx1_tuned ? (0.1 * ((gdouble)rx1)) : -G_MAXDOUBLE;
+            ctx->gsm_tx = in_traffic ? (0.1 * ((gdouble)tx))  : -G_MAXDOUBLE;
+            break;
+        case MRM_DEVICE_ACT_UMTS:
+            ctx->has_umts = TRUE;
+            ctx->umts_rx0 = rx0_tuned ? (0.1 * ((gdouble)rx0)) : -G_MAXDOUBLE;
+            ctx->umts_rx1 = rx1_tuned ? (0.1 * ((gdouble)rx1)) : -G_MAXDOUBLE;
+            ctx->umts_tx = in_traffic ? (0.1 * ((gdouble)tx))  : -G_MAXDOUBLE;
+            break;
+        case MRM_DEVICE_ACT_LTE:
+            ctx->has_lte = TRUE;
+            ctx->lte_rx0 = rx0_tuned ? (0.1 * ((gdouble)rx0)) : -G_MAXDOUBLE;
+            ctx->lte_rx1 = rx1_tuned ? (0.1 * ((gdouble)rx1)) : -G_MAXDOUBLE;
+            ctx->lte_tx = in_traffic ? (0.1 * ((gdouble)tx))  : -G_MAXDOUBLE;
+            break;
+        case MRM_DEVICE_ACT_CDMA:
+            ctx->has_cdma = TRUE;
+            ctx->cdma_rx0 = rx0_tuned ? (0.1 * ((gdouble)rx0)) : -G_MAXDOUBLE;
+            ctx->cdma_rx1 = rx1_tuned ? (0.1 * ((gdouble)rx1)) : -G_MAXDOUBLE;
+            ctx->cdma_tx = in_traffic ? (0.1 * ((gdouble)tx))  : -G_MAXDOUBLE;
+            break;
+        case MRM_DEVICE_ACT_EVDO:
+            ctx->has_evdo = TRUE;
+            ctx->evdo_rx0 = rx0_tuned ? (0.1 * ((gdouble)rx0)) : -G_MAXDOUBLE;
+            ctx->evdo_rx1 = rx1_tuned ? (0.1 * ((gdouble)rx1)) : -G_MAXDOUBLE;
+            ctx->evdo_tx = in_traffic ? (0.1 * ((gdouble)tx))  : -G_MAXDOUBLE;
+            break;
+        default:
+            g_assert_not_reached ();
+        }
+    }
+
+    if (output)
+        qmi_message_nas_get_tx_rx_info_output_unref (output);
+
+    /* Go on */
+    ctx->current_i++;
+    reload_power_info_context_step (ctx);
+}
+
+static void
+reload_power_info_context_step (ReloadPowerInfoContext *ctx)
+{
+    guint i;
+
+    for (i = ctx->current_i; i < sizeof (MrmDeviceAct) * 8; i++) {
+        guint32 current = 1 << i;
+
+        /* Found the next one to query! */
+        if (ctx->act & current) {
+            QmiMessageNasGetTxRxInfoInput *input;
+            QmiNasRadioInterface nas_iface;
+
+            switch (current) {
+            case MRM_DEVICE_ACT_GSM:
+                nas_iface = QMI_NAS_RADIO_INTERFACE_GSM;
+                break;
+            case MRM_DEVICE_ACT_UMTS:
+                nas_iface = QMI_NAS_RADIO_INTERFACE_UMTS;
+                break;
+            case MRM_DEVICE_ACT_LTE:
+                nas_iface = QMI_NAS_RADIO_INTERFACE_LTE;
+                break;
+            case MRM_DEVICE_ACT_CDMA:
+                nas_iface = QMI_NAS_RADIO_INTERFACE_CDMA_1X;
+                break;
+            case MRM_DEVICE_ACT_EVDO:
+                nas_iface = QMI_NAS_RADIO_INTERFACE_CDMA_1XEVDO;
+                break;
+            default:
+                g_assert_not_reached ();
+            }
+
+            ctx->current_i = i;
+
+            input = qmi_message_nas_get_tx_rx_info_input_new ();
+            qmi_message_nas_get_tx_rx_info_input_set_radio_interface (input, nas_iface, NULL);
+            qmi_client_nas_get_tx_rx_info (QMI_CLIENT_NAS (ctx->self->priv->nas),
+                                           input,
+                                           1,
+                                           NULL,
+                                           (GAsyncReadyCallback)qmi_client_nas_get_tx_rx_info_ready,
+                                           ctx);
+            qmi_message_nas_get_tx_rx_info_input_unref (input);
+            return;
+        }
+    }
+
+    /* All done */
+    reload_power_info_context_complete (ctx);
+}
+
+static void
+reload_power_info (MrmDevice *self,
+                   MrmDeviceAct act)
+{
+    ReloadPowerInfoContext *ctx;
+
+    ctx = g_slice_new0 (ReloadPowerInfoContext);
+    ctx->self = g_object_ref (self);
+    ctx->act = act;
+    ctx->current_i = 0;
+
+    reload_power_info_context_step (ctx);
+}
 
 /*****************************************************************************/
 /* Reload signal info */
@@ -99,7 +306,7 @@ qmi_client_nas_get_signal_info_ready (QmiClientNas *client,
 {
     QmiMessageNasGetSignalInfoOutput *output;
     GError *error = NULL;
-    guint quality = 0;
+    MrmDeviceAct act = 0;
 
     output = qmi_client_nas_get_signal_info_finish (client, res, &error);
     if (!output || !qmi_message_nas_get_signal_info_output_get_result (output, &error)) {
@@ -124,7 +331,6 @@ qmi_client_nas_get_signal_info_ready (QmiClientNas *client,
         gboolean has_lte;
         gboolean has_cdma;
         gboolean has_evdo;
-        MrmDeviceAct act = 0;
 
         /* Get signal info */
         has_gsm = qmi_message_nas_get_signal_info_output_get_gsm_signal_strength (output, &gsm_rssi, NULL);
@@ -193,12 +399,17 @@ qmi_client_nas_get_signal_info_ready (QmiClientNas *client,
 
     if (output)
         qmi_message_nas_get_signal_info_output_unref (output);
+
+    /* Now reload power info */
+    reload_power_info (self, act);
+
     g_object_unref (self);
 }
 
 static gboolean
-signal_info_reload_cb (MrmDevice *self)
+info_reload_cb (MrmDevice *self)
 {
+    /* First, signal info */
     qmi_client_nas_get_signal_info (QMI_CLIENT_NAS (self->priv->nas),
                                     NULL,
                                     10,
@@ -487,8 +698,8 @@ mrm_device_stop_nas (MrmDevice *self,
         return;
     }
 
-    g_source_remove (self->priv->signal_info_updated_id);
-    self->priv->signal_info_updated_id = 0;
+    g_source_remove (self->priv->info_updated_id);
+    self->priv->info_updated_id = 0;
 
     qmi_device_release_client (self->priv->qmi_device,
                                self->priv->nas,
@@ -525,11 +736,11 @@ qmi_device_allocate_client_nas_ready (QmiDevice *device,
         g_prefix_error (&error, "Cannot allocate NAS client: ");
         g_simple_async_result_take_error (simple, error);
     } else {
-        /* Start signal info polling */
-        self->priv->signal_info_updated_id = g_timeout_add_seconds (1,
-                                                                    (GSourceFunc) signal_info_reload_cb,
-                                                                    self);
-        signal_info_reload_cb (self);
+        /* Start info polling */
+        self->priv->info_updated_id = g_timeout_add_seconds (1,
+                                                             (GSourceFunc) info_reload_cb,
+                                                             self);
+        info_reload_cb (self);
         g_simple_async_result_set_op_res_gboolean (simple, TRUE);
     }
 
@@ -722,14 +933,14 @@ MrmDevice *
 mrm_device_new_finish (GAsyncResult *res,
                        GError **error)
 {
-  GObject *ret;
-  GObject *source_object;
+    GObject *ret;
+    GObject *source_object;
 
-  source_object = g_async_result_get_source_object (res);
-  ret = g_async_initable_new_finish (G_ASYNC_INITABLE (source_object), res, error);
-  g_object_unref (source_object);
+    source_object = g_async_result_get_source_object (res);
+    ret = g_async_initable_new_finish (G_ASYNC_INITABLE (source_object), res, error);
+    g_object_unref (source_object);
 
-  return (ret ? MRM_DEVICE (ret) : NULL);
+    return (ret ? MRM_DEVICE (ret) : NULL);
 }
 
 void
@@ -1067,8 +1278,8 @@ dispose (GObject *object)
     }
 
     if (self->priv->nas) {
-        g_source_remove (self->priv->signal_info_updated_id);
-        self->priv->signal_info_updated_id = 0;
+        g_source_remove (self->priv->info_updated_id);
+        self->priv->info_updated_id = 0;
 
         qmi_device_release_client (self->priv->qmi_device,
                                    self->priv->nas,
@@ -1238,5 +1449,50 @@ mrm_device_class_init (MrmDeviceClass *klass)
                       g_cclosure_marshal_generic,
 					  G_TYPE_NONE,
                       1,
+                      G_TYPE_DOUBLE);
+
+    signals[SIGNAL_RX0_UPDATED] =
+        g_signal_new ("rx0-updated",
+                      G_OBJECT_CLASS_TYPE (object_class),
+                      G_SIGNAL_RUN_FIRST,
+                      G_STRUCT_OFFSET (MrmDeviceClass, rx0_updated),
+                      NULL, NULL,
+                      g_cclosure_marshal_generic,
+					  G_TYPE_NONE,
+                      5,
+                      G_TYPE_DOUBLE,
+                      G_TYPE_DOUBLE,
+                      G_TYPE_DOUBLE,
+                      G_TYPE_DOUBLE,
+                      G_TYPE_DOUBLE);
+
+    signals[SIGNAL_RX1_UPDATED] =
+        g_signal_new ("rx1-updated",
+                      G_OBJECT_CLASS_TYPE (object_class),
+                      G_SIGNAL_RUN_FIRST,
+                      G_STRUCT_OFFSET (MrmDeviceClass, rx1_updated),
+                      NULL, NULL,
+                      g_cclosure_marshal_generic,
+					  G_TYPE_NONE,
+                      5,
+                      G_TYPE_DOUBLE,
+                      G_TYPE_DOUBLE,
+                      G_TYPE_DOUBLE,
+                      G_TYPE_DOUBLE,
+                      G_TYPE_DOUBLE);
+
+    signals[SIGNAL_TX_UPDATED] =
+        g_signal_new ("tx-updated",
+                      G_OBJECT_CLASS_TYPE (object_class),
+                      G_SIGNAL_RUN_FIRST,
+                      G_STRUCT_OFFSET (MrmDeviceClass, tx_updated),
+                      NULL, NULL,
+                      g_cclosure_marshal_generic,
+					  G_TYPE_NONE,
+                      5,
+                      G_TYPE_DOUBLE,
+                      G_TYPE_DOUBLE,
+                      G_TYPE_DOUBLE,
+                      G_TYPE_DOUBLE,
                       G_TYPE_DOUBLE);
 }

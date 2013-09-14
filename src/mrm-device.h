@@ -87,6 +87,27 @@ struct _MrmDeviceClass {
 
     void (*snr_updated) (MrmDevice *device,
                          gdouble lte_snr);
+
+    void (*rx0_updated) (MrmDevice *device,
+                         gdouble gsm_rx0,
+                         gdouble umts_rx0,
+                         gdouble lte_rx0,
+                         gdouble cdma_rx0,
+                         gdouble evdo_rx0);
+
+    void (*rx1_updated) (MrmDevice *device,
+                         gdouble gsm_rx1,
+                         gdouble umts_rx1,
+                         gdouble lte_rx1,
+                         gdouble cdma_rx1,
+                         gdouble evdo_rx1);
+
+    void (*tx_updated) (MrmDevice *device,
+                         gdouble gsm_tx,
+                         gdouble umts_tx,
+                         gdouble lte_tx,
+                         gdouble cdma_tx,
+                         gdouble evdo_tx);
 };
 
 GType mrm_device_get_type (void) G_GNUC_CONST;
