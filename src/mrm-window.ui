@@ -25,10 +25,11 @@
         <property name="vexpand">False</property>
         <property name="show-close-button">True</property>
         <child>
-          <object class="GtkBox" id="box">
+          <object class="GtkBox" id="back_box">
             <property name="visible">True</property>
             <property name="valign">center</property>
             <property name="can_focus">False</property>
+            <property name="orientation">horizontal</property>
             <style>
               <class name="linked"/>
             </style>
@@ -51,6 +52,40 @@
                   </object>
                 </child>
               </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="pack_type">start</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkBox" id="tabs_box">
+            <property name="visible">True</property>
+            <property name="valign">center</property>
+            <property name="can_focus">False</property>
+            <property name="orientation">horizontal</property>
+            <style>
+              <class name="linked"/>
+            </style>
+            <child>
+              <object class="GtkButton" id="signal_tab_button">
+                <property name="visible">True</property>
+                <property name="sensitive">False</property>
+                <property name="valign">center</property>
+                <property name="can_focus">False</property>
+                <property name="action_name">win.go-signal-tab</property>
+                <property name="label">Signal</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
             </child>
           </object>
           <packing>
