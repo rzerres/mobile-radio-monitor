@@ -62,6 +62,7 @@ struct _MrmWindowPrivate {
     GtkWidget *graph_legend_lte_rsrq_value_label;
     GtkWidget *graph_legend_lte_rsrp_value_label;
     GtkWidget *graph_legend_lte_snr_value_label;
+    guint act_updated_id;
     GtkWidget *rssi_graph;
     guint rssi_graph_updated_id;
     GtkWidget *ecio_graph;
@@ -76,6 +77,20 @@ struct _MrmWindowPrivate {
     guint rsrp_graph_updated_id;
     GtkWidget *snr_graph;
     guint snr_graph_updated_id;
+
+    GtkWidget *rssi_graph_frame;
+    GtkWidget *ecio_graph_frame;
+    GtkWidget *sinr_level_graph_frame;
+    GtkWidget *io_graph_frame;
+    GtkWidget *rsrq_graph_frame;
+    GtkWidget *rsrp_graph_frame;
+    GtkWidget *snr_graph_frame;
+
+    GtkWidget *graph_legend_gsm_box;
+    GtkWidget *graph_legend_umts_box;
+    GtkWidget *graph_legend_lte_box;
+    GtkWidget *graph_legend_cdma_box;
+    GtkWidget *graph_legend_evdo_box;
 
     guint initial_scan_done_id;
     guint device_detection_id;
@@ -123,6 +138,39 @@ select_device_list_tab (MrmWindow *self)
     gtk_header_bar_set_title (GTK_HEADER_BAR (self->priv->header_bar), "Mobile Radio Monitor");
     gtk_widget_set_sensitive (self->priv->back_button, FALSE);
     gtk_notebook_set_current_page (GTK_NOTEBOOK (self->priv->notebook), NOTEBOOK_TAB_DEVICE_LIST);
+}
+
+static void
+act_updated (MrmDevice *device,
+             MrmDeviceAct act,
+             MrmWindow *self)
+{
+    gtk_widget_set_sensitive (self->priv->rssi_graph_frame, TRUE);
+    gtk_widget_set_sensitive (self->priv->ecio_graph_frame,
+                              (act & (MRM_DEVICE_ACT_UMTS |
+                                      MRM_DEVICE_ACT_CDMA |
+                                      MRM_DEVICE_ACT_EVDO)));
+    gtk_widget_set_sensitive (self->priv->sinr_level_graph_frame,
+                              (act & (MRM_DEVICE_ACT_EVDO)));
+    gtk_widget_set_sensitive (self->priv->io_graph_frame,
+                              (act & (MRM_DEVICE_ACT_EVDO)));
+    gtk_widget_set_sensitive (self->priv->rsrq_graph_frame,
+                              (act & (MRM_DEVICE_ACT_LTE)));
+    gtk_widget_set_sensitive (self->priv->rsrp_graph_frame,
+                              (act & (MRM_DEVICE_ACT_LTE)));
+    gtk_widget_set_sensitive (self->priv->snr_graph_frame,
+                              (act & (MRM_DEVICE_ACT_LTE)));
+
+    gtk_widget_set_sensitive (self->priv->graph_legend_gsm_box,
+                              (act & MRM_DEVICE_ACT_GSM));
+    gtk_widget_set_sensitive (self->priv->graph_legend_umts_box,
+                              (act & MRM_DEVICE_ACT_UMTS));
+    gtk_widget_set_sensitive (self->priv->graph_legend_lte_box,
+                              (act & MRM_DEVICE_ACT_LTE));
+    gtk_widget_set_sensitive (self->priv->graph_legend_cdma_box,
+                              (act & MRM_DEVICE_ACT_CDMA));
+    gtk_widget_set_sensitive (self->priv->graph_legend_evdo_box,
+                              (act & MRM_DEVICE_ACT_EVDO));
 }
 
 typedef enum {
@@ -292,6 +340,11 @@ change_current_device (MrmWindow *self,
             return;
 
         /* Changing current device, cleanup */
+        if (self->priv->act_updated_id) {
+            g_signal_handler_disconnect (self->priv->current, self->priv->act_updated_id);
+            self->priv->act_updated_id = 0;
+        }
+
         if (self->priv->rssi_graph_updated_id) {
             g_signal_handler_disconnect (self->priv->current, self->priv->rssi_graph_updated_id);
             self->priv->rssi_graph_updated_id = 0;
@@ -355,6 +408,10 @@ change_current_device (MrmWindow *self,
     if (new_device) {
         /* Keep a ref to current device */
         self->priv->current = g_object_ref (new_device);
+        self->priv->act_updated_id = g_signal_connect (new_device,
+                                                       "act-updated",
+                                                       G_CALLBACK (act_updated),
+                                                       self);
         self->priv->rssi_graph_updated_id = g_signal_connect (new_device,
                                                               "rssi-updated",
                                                               G_CALLBACK (rssi_updated),
@@ -942,6 +999,18 @@ mrm_window_class_init (MrmWindowClass *klass)
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, rsrq_graph);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, rsrp_graph);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, snr_graph);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, rssi_graph_frame);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, ecio_graph_frame);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, sinr_level_graph_frame);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, io_graph_frame);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, rsrq_graph_frame);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, rsrp_graph_frame);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, snr_graph_frame);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_gsm_box);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_umts_box);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_lte_box);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_cdma_box);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_evdo_box);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_gsm_icon);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_umts_icon);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_legend_lte_icon);
