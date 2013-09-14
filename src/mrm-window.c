@@ -23,7 +23,7 @@
 #include "mrm-color-icon.h"
 
 #define NOTEBOOK_TAB_DEVICE_LIST 0
-#define NOTEBOOK_TAB_SIGNAL_INFO 1
+#define NOTEBOOK_TAB_GRAPHS      1
 
 struct _MrmWindowPrivate {
     GtkWidget *notebook;
@@ -31,6 +31,7 @@ struct _MrmWindowPrivate {
     /* Header bar */
     GtkWidget *header_bar;
     GtkWidget *back_button;
+    GtkWidget *graph_stack_switcher;
 
     /* Device list tab */
     GtkWidget *device_list_frame;
@@ -446,11 +447,12 @@ go_back_cb (GSimpleAction *action,
 
     gtk_header_bar_set_title (GTK_HEADER_BAR (self->priv->header_bar), "Mobile Radio Monitor");
     gtk_widget_set_sensitive (self->priv->back_button, FALSE);
+    gtk_widget_hide (self->priv->graph_stack_switcher);
     gtk_notebook_set_current_page (GTK_NOTEBOOK (self->priv->notebook), NOTEBOOK_TAB_DEVICE_LIST);
 }
 
 static void
-go_signal_tab_cb (GSimpleAction *action,
+go_graphs_tab_cb (GSimpleAction *action,
                   GVariant      *parameter,
                   gpointer       user_data)
 {
@@ -465,13 +467,14 @@ go_signal_tab_cb (GSimpleAction *action,
     }
 
     gtk_widget_set_sensitive (self->priv->back_button, TRUE);
-    gtk_notebook_set_current_page (GTK_NOTEBOOK (self->priv->notebook), NOTEBOOK_TAB_SIGNAL_INFO);
+    gtk_widget_show (self->priv->graph_stack_switcher);
+    gtk_notebook_set_current_page (GTK_NOTEBOOK (self->priv->notebook), NOTEBOOK_TAB_GRAPHS);
 }
 
 static GActionEntry win_entries[] = {
     /* go */
     { "go-back",       go_back_cb,       NULL, "false", NULL },
-    { "go-signal-tab", go_signal_tab_cb, NULL, "false", NULL },
+    { "go-graphs-tab", go_graphs_tab_cb, NULL, "false", NULL },
 };
 
 /******************************************************************************/
@@ -487,7 +490,7 @@ mrm_window_open_device (MrmWindow *self,
     mrm_device_start_nas (device, NULL, NULL);
 
     /* Go to the signal tab */
-    g_action_group_activate_action (G_ACTION_GROUP (self), "go-signal-tab", NULL);
+    g_action_group_activate_action (G_ACTION_GROUP (self), "go-graphs-tab", NULL);
 }
 
 /******************************************************************************/
@@ -993,6 +996,7 @@ mrm_window_class_init (MrmWindowClass *klass)
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, notebook);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, header_bar);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, back_button);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, graph_stack_switcher);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, device_list_frame);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, device_list_box);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, device_list_label);

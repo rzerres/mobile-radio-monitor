@@ -64,29 +64,10 @@
           </packing>
         </child>
         <child>
-          <object class="GtkBox" id="tabs_box">
-            <property name="visible">True</property>
+          <object class="GtkStackSwitcher" id="graph_stack_switcher">
+            <property name="visible">False</property>
             <property name="valign">center</property>
-            <property name="can_focus">False</property>
-            <property name="orientation">horizontal</property>
-            <style>
-              <class name="linked"/>
-            </style>
-            <child>
-              <object class="GtkButton" id="signal_tab_button">
-                <property name="visible">True</property>
-                <property name="sensitive">False</property>
-                <property name="valign">center</property>
-                <property name="can_focus">False</property>
-                <property name="action_name">win.go-signal-tab</property>
-                <property name="label">Signal</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">0</property>
-              </packing>
-            </child>
+            <property name="stack">graphs_stack</property>
           </object>
           <packing>
             <property name="pack_type">start</property>
@@ -122,7 +103,7 @@
         <property name="can_focus">True</property>
         <property name="show_tabs">False</property>
         <child>
-          <object class="GtkBox" id="device_list_vbox">
+          <object class="GtkBox" id="device_list">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="halign">center</property>
@@ -334,7 +315,7 @@
           </object>
         </child>
         <child type="tab">
-          <object class="GtkLabel" id="device-list-tab">
+          <object class="GtkLabel" id="device_list_tab">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="label" translatable="yes">Device List</property>
@@ -345,40 +326,71 @@
           </packing>
         </child>
         <child>
-          <object class="GtkBox" id="signal_graph_box">
+          <object class="GtkStack" id="graphs_stack">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="orientation">horizontal</property>
-            <property name="margin-left">5</property>
-            <property name="margin-right">5</property>
-            <property name="margin-top">5</property>
-            <property name="margin-bottom">5</property>
+            <property name="transition-type">slide-right</property>
+            <property name="transition-duration">500</property>
+            <property name="visible-child-name">signal_box</property>
             <child>
-              <object class="GtkBox" id="signal_graph_legend_box">
+              <object class="GtkBox" id="signal_box">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
+                <property name="orientation">horizontal</property>
                 <property name="margin-left">5</property>
                 <property name="margin-right">5</property>
                 <property name="margin-top">5</property>
                 <property name="margin-bottom">5</property>
-                <property name="orientation">vertical</property>
-                <property name="vexpand">true</property>
-                <property name="valign">center</property>
                 <child>
-                  <object class="GtkBox" id="signal_graph_legend_gsm_box">
+                  <object class="GtkBox" id="signal_graph_legend_box">
                     <property name="visible">True</property>
-                    <property name="sensitive">False</property>
                     <property name="can_focus">False</property>
+                    <property name="margin-left">5</property>
+                    <property name="margin-right">5</property>
+                    <property name="margin-top">5</property>
+                    <property name="margin-bottom">5</property>
                     <property name="orientation">vertical</property>
+                    <property name="vexpand">true</property>
+                    <property name="valign">center</property>
                     <child>
-                      <object class="GtkBox" id="signal_graph_legend_gsm_title_box">
+                      <object class="GtkBox" id="signal_graph_legend_gsm_box">
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can_focus">False</property>
-                        <property name="orientation">horizontal</property>
+                        <property name="orientation">vertical</property>
                         <child>
-                          <object class="MrmColorIcon" id="signal_graph_legend_gsm_icon">
+                          <object class="GtkBox" id="signal_graph_legend_gsm_title_box">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
+                            <property name="orientation">horizontal</property>
+                            <child>
+                              <object class="MrmColorIcon" id="signal_graph_legend_gsm_icon">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                                <property name="padding">4</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_gsm_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">GSM</property>
+                                <attributes>
+                                  <attribute name="weight" value="bold"/>
+                                </attributes>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                                <property name="padding">4</property>
+                              </packing>
+                            </child>
                           </object>
                           <packing>
                             <property name="expand">False</property>
@@ -388,13 +400,44 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="signal_graph_legend_gsm_label">
+                          <object class="GtkGrid" id="signal_graph_legend_gsm_grid">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="label">GSM</property>
-                            <attributes>
-                              <attribute name="weight" value="bold"/>
-                            </attributes>
+                            <property name="column-homogeneous">True</property>
+                            <property name="margin-left">5</property>
+                            <property name="margin-right">5</property>
+                            <property name="margin-top">5</property>
+                            <property name="margin-bottom">5</property>
+                            <property name="row-spacing">5</property>
+                            <property name="column-spacing">5</property>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_gsm_rssi_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">RSSI:</property>
+                                <property name="halign">end</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">0</property>
+                                <property name="top_attach">0</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_gsm_rssi_value_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">N/A</property>
+                                <property name="halign">start</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="top_attach">0</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
                           </object>
                           <packing>
                             <property name="expand">False</property>
@@ -412,42 +455,125 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkGrid" id="signal_graph_legend_gsm_grid">
+                      <object class="GtkBox" id="signal_graph_legend_umts_box">
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can_focus">False</property>
-                        <property name="column-homogeneous">True</property>
-                        <property name="margin-left">5</property>
-                        <property name="margin-right">5</property>
-                        <property name="margin-top">5</property>
-                        <property name="margin-bottom">5</property>
-                        <property name="row-spacing">5</property>
-                        <property name="column-spacing">5</property>
+                        <property name="orientation">vertical</property>
                         <child>
-                          <object class="GtkLabel" id="signal_graph_legend_gsm_rssi_label">
+                          <object class="GtkBox" id="signal_graph_legend_umts_title_box">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="label">RSSI:</property>
-                            <property name="halign">end</property>
+                            <property name="orientation">horizontal</property>
+                            <child>
+                              <object class="MrmColorIcon" id="signal_graph_legend_umts_icon">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                                <property name="padding">4</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_umts_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">UMTS</property>
+                                <attributes>
+                                  <attribute name="weight" value="bold"/>
+                                </attributes>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                                <property name="padding">4</property>
+                              </packing>
+                            </child>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">0</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
+                            <property name="expand">False</property>
+                            <property name="fill">True</property>
+                            <property name="position">0</property>
+                            <property name="padding">4</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="signal_graph_legend_gsm_rssi_value_label">
+                          <object class="GtkGrid" id="signal_graph_legend_umts_grid">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="label">N/A</property>
-                            <property name="halign">start</property>
+                            <property name="column-homogeneous">True</property>
+                            <property name="margin-left">5</property>
+                            <property name="margin-right">5</property>
+                            <property name="margin-top">5</property>
+                            <property name="margin-bottom">5</property>
+                            <property name="row-spacing">5</property>
+                            <property name="column-spacing">5</property>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_umts_rssi_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">RSSI:</property>
+                                <property name="halign">end</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">0</property>
+                                <property name="top_attach">0</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_umts_rssi_value_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">N/A</property>
+                                <property name="halign">start</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="top_attach">0</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_umts_ecio_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">ECIO:</property>
+                                <property name="halign">end</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">0</property>
+                                <property name="top_attach">1</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_umts_ecio_value_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">N/A</property>
+                                <property name="halign">start</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="top_attach">1</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
                           </object>
                           <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">0</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
+                            <property name="expand">False</property>
+                            <property name="fill">True</property>
+                            <property name="position">1</property>
+                            <property name="padding">4</property>
                           </packing>
                         </child>
                       </object>
@@ -455,6 +581,508 @@
                         <property name="expand">False</property>
                         <property name="fill">True</property>
                         <property name="position">1</property>
+                        <property name="padding">4</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkBox" id="signal_graph_legend_lte_box">
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
+                        <property name="can_focus">False</property>
+                        <property name="orientation">vertical</property>
+                        <child>
+                          <object class="GtkBox" id="signal_graph_legend_lte_title_box">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="orientation">horizontal</property>
+                            <child>
+                              <object class="MrmColorIcon" id="signal_graph_legend_lte_icon">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                                <property name="padding">4</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_lte_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">LTE</property>
+                                <attributes>
+                                  <attribute name="weight" value="bold"/>
+                                </attributes>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                                <property name="padding">4</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">True</property>
+                            <property name="position">0</property>
+                            <property name="padding">4</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkGrid" id="signal_graph_legend_lte_grid">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="column-homogeneous">True</property>
+                            <property name="margin-left">5</property>
+                            <property name="margin-right">5</property>
+                            <property name="margin-top">5</property>
+                            <property name="margin-bottom">5</property>
+                            <property name="row-spacing">5</property>
+                            <property name="column-spacing">5</property>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_lte_rssi_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">RSSI:</property>
+                                <property name="halign">end</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">0</property>
+                                <property name="top_attach">0</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_lte_rssi_value_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">N/A</property>
+                                <property name="halign">start</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="top_attach">0</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_lte_rsrq_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">RSRQ:</property>
+                                <property name="halign">end</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">0</property>
+                                <property name="top_attach">1</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_lte_rsrq_value_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">N/A</property>
+                                <property name="halign">start</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="top_attach">1</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_lte_rsrp_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">RSRP:</property>
+                                <property name="halign">end</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">0</property>
+                                <property name="top_attach">2</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_lte_rsrp_value_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">N/A</property>
+                                <property name="halign">start</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="top_attach">2</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_lte_snr_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">S/N:</property>
+                                <property name="halign">end</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">0</property>
+                                <property name="top_attach">3</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_lte_snr_value_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">N/A</property>
+                                <property name="halign">start</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="top_attach">3</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">True</property>
+                            <property name="position">1</property>
+                            <property name="padding">4</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">2</property>
+                        <property name="padding">4</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkBox" id="signal_graph_legend_cdma_box">
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
+                        <property name="can_focus">False</property>
+                        <property name="orientation">vertical</property>
+                        <child>
+                          <object class="GtkBox" id="signal_graph_legend_cdma_title_box">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="orientation">horizontal</property>
+                            <child>
+                              <object class="MrmColorIcon" id="signal_graph_legend_cdma_icon">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                                <property name="padding">4</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_cdma_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">CDMA</property>
+                                <attributes>
+                                  <attribute name="weight" value="bold"/>
+                                </attributes>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                                <property name="padding">4</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">True</property>
+                            <property name="position">0</property>
+                            <property name="padding">4</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkGrid" id="signal_graph_legend_cdma_grid">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="column-homogeneous">True</property>
+                            <property name="margin-left">5</property>
+                            <property name="margin-right">5</property>
+                            <property name="margin-top">5</property>
+                            <property name="margin-bottom">5</property>
+                            <property name="row-spacing">5</property>
+                            <property name="column-spacing">5</property>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_cdma_rssi_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">RSSI:</property>
+                                <property name="halign">end</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">0</property>
+                                <property name="top_attach">0</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_cdma_rssi_value_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">N/A</property>
+                                <property name="halign">start</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="top_attach">0</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_cdma_ecio_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">ECIO:</property>
+                                <property name="halign">end</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">0</property>
+                                <property name="top_attach">1</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_cdma_ecio_value_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">N/A</property>
+                                <property name="halign">start</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="top_attach">1</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">True</property>
+                            <property name="position">1</property>
+                            <property name="padding">4</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">3</property>
+                        <property name="padding">4</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkBox" id="signal_graph_legend_evdo_box">
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
+                        <property name="can_focus">False</property>
+                        <property name="orientation">vertical</property>
+                        <child>
+                          <object class="GtkBox" id="signal_graph_legend_evdo_title_box">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="orientation">horizontal</property>
+                            <child>
+                              <object class="MrmColorIcon" id="signal_graph_legend_evdo_icon">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                                <property name="padding">4</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_evdo_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">EVDO</property>
+                                <attributes>
+                                  <attribute name="weight" value="bold"/>
+                                </attributes>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                                <property name="padding">4</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">True</property>
+                            <property name="position">0</property>
+                            <property name="padding">4</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkGrid" id="signal_graph_legend_evdo_grid">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="column-homogeneous">True</property>
+                            <property name="margin-left">5</property>
+                            <property name="margin-right">5</property>
+                            <property name="margin-top">5</property>
+                            <property name="margin-bottom">5</property>
+                            <property name="row-spacing">5</property>
+                            <property name="column-spacing">5</property>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_evdo_rssi_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">RSSI:</property>
+                                <property name="halign">end</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">0</property>
+                                <property name="top_attach">0</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_evdo_rssi_value_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">N/A</property>
+                                <property name="halign">start</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="top_attach">0</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_evdo_ecio_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">ECIO:</property>
+                                <property name="halign">end</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">0</property>
+                                <property name="top_attach">1</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_evdo_ecio_value_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">N/A</property>
+                                <property name="halign">start</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="top_attach">1</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_evdo_sinr_level_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">SINR:</property>
+                                <property name="halign">end</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">0</property>
+                                <property name="top_attach">2</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_evdo_sinr_level_value_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">N/A</property>
+                                <property name="halign">start</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="top_attach">2</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_evdo_io_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">IO:</property>
+                                <property name="halign">end</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">0</property>
+                                <property name="top_attach">3</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="signal_graph_legend_evdo_io_value_label">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label">N/A</property>
+                                <property name="halign">start</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="top_attach">3</property>
+                                <property name="width">1</property>
+                                <property name="height">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">True</property>
+                            <property name="position">1</property>
+                            <property name="padding">4</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">4</property>
                         <property name="padding">4</property>
                       </packing>
                     </child>
@@ -463,129 +1091,223 @@
                     <property name="expand">False</property>
                     <property name="fill">True</property>
                     <property name="position">0</property>
-                    <property name="padding">4</property>
+                    <property name="padding">0</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkBox" id="signal_graph_legend_umts_box">
+                  <object class="GtkGrid" id="signal_graph_grid">
                     <property name="visible">True</property>
-                    <property name="sensitive">False</property>
                     <property name="can_focus">False</property>
-                    <property name="orientation">vertical</property>
+                    <property name="column-homogeneous">True</property>
+                    <property name="margin-left">5</property>
+                    <property name="margin-right">5</property>
+                    <property name="margin-top">5</property>
+                    <property name="margin-bottom">5</property>
+                    <property name="hexpand">True</property>
+                    <property name="vexpand">True</property>
+                    <property name="row-spacing">5</property>
+                    <property name="column-spacing">5</property>
                     <child>
-                      <object class="GtkBox" id="signal_graph_legend_umts_title_box">
+                      <object class="GtkFrame" id="rssi_graph_frame">
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can_focus">False</property>
-                        <property name="orientation">horizontal</property>
+                        <property name="shadow_type">in</property>
                         <child>
-                          <object class="MrmColorIcon" id="signal_graph_legend_umts_icon">
+                          <object class="MrmGraph" id="rssi_graph">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
+                            <property name="title">RSSI</property>
+                            <property name="y-max">-49.0</property>
+                            <property name="y-min">-113.0</property>
+                            <property name="y-n-separators">4</property>
+                            <property name="y-units">dBm</property>
+                            <property name="n-series">5</property>
+                            <property name="hexpand">True</property>
+                            <property name="vexpand">True</property>
+                            <property name="legend-position">none</property>
                           </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">0</property>
-                            <property name="padding">4</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="signal_graph_legend_umts_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label">UMTS</property>
-                            <attributes>
-                              <attribute name="weight" value="bold"/>
-                            </attributes>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">1</property>
-                            <property name="padding">4</property>
-                          </packing>
                         </child>
                       </object>
                       <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="position">0</property>
-                        <property name="padding">4</property>
+                        <property name="left_attach">0</property>
+                        <property name="top_attach">0</property>
+                        <property name="width">1</property>
+                        <property name="height">2</property>
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkGrid" id="signal_graph_legend_umts_grid">
+                      <object class="GtkFrame" id="ecio_graph_frame">
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can_focus">False</property>
-                        <property name="column-homogeneous">True</property>
-                        <property name="margin-left">5</property>
-                        <property name="margin-right">5</property>
-                        <property name="margin-top">5</property>
-                        <property name="margin-bottom">5</property>
-                        <property name="row-spacing">5</property>
-                        <property name="column-spacing">5</property>
+                        <property name="shadow_type">in</property>
                         <child>
-                          <object class="GtkLabel" id="signal_graph_legend_umts_rssi_label">
+                          <object class="MrmGraph" id="ecio_graph">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="label">RSSI:</property>
-                            <property name="halign">end</property>
+                            <property name="title">Ec/Io</property>
+                            <property name="y-max">0.0</property>
+                            <property name="y-min">-50.0</property>
+                            <property name="y-n-separators">4</property>
+                            <property name="y-units">dBm</property>
+                            <property name="n-series">5</property>
+                            <property name="hexpand">True</property>
+                            <property name="vexpand">True</property>
+                            <property name="legend-position">none</property>
                           </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">0</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="signal_graph_legend_umts_rssi_value_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label">N/A</property>
-                            <property name="halign">start</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">0</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="signal_graph_legend_umts_ecio_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label">ECIO:</property>
-                            <property name="halign">end</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">1</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="signal_graph_legend_umts_ecio_value_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label">N/A</property>
-                            <property name="halign">start</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">1</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
-                          </packing>
                         </child>
                       </object>
                       <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="position">1</property>
-                        <property name="padding">4</property>
+                        <property name="left_attach">1</property>
+                        <property name="top_attach">0</property>
+                        <property name="width">1</property>
+                        <property name="height">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkFrame" id="rsrq_graph_frame">
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
+                        <property name="can_focus">False</property>
+                        <property name="shadow_type">in</property>
+                        <child>
+                          <object class="MrmGraph" id="rsrq_graph">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="title">RSRQ</property>
+                            <property name="y-max">-3</property>
+                            <property name="y-min">-20</property>
+                            <property name="y-n-separators">4</property>
+                            <property name="y-units">dB</property>
+                            <property name="n-series">1</property>
+                            <property name="hexpand">True</property>
+                            <property name="vexpand">True</property>
+                            <property name="legend-position">none</property>
+                          </object>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="top_attach">1</property>
+                        <property name="width">1</property>
+                        <property name="height">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkFrame" id="rsrp_graph_frame">
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
+                        <property name="can_focus">False</property>
+                        <property name="shadow_type">in</property>
+                        <child>
+                          <object class="MrmGraph" id="rsrp_graph">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="title">RSRP</property>
+                            <property name="y-max">-44</property>
+                            <property name="y-min">-140</property>
+                            <property name="y-n-separators">4</property>
+                            <property name="y-units">dBm</property>
+                            <property name="n-series">1</property>
+                            <property name="hexpand">True</property>
+                            <property name="vexpand">True</property>
+                            <property name="legend-position">none</property>
+                          </object>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">0</property>
+                        <property name="top_attach">2</property>
+                        <property name="width">1</property>
+                        <property name="height">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkFrame" id="snr_graph_frame">
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
+                        <property name="can_focus">False</property>
+                        <property name="shadow_type">in</property>
+                        <child>
+                          <object class="MrmGraph" id="snr_graph">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="title">S/N</property>
+                            <property name="y-max">50</property>
+                            <property name="y-min">-50</property>
+                            <property name="y-n-separators">4</property>
+                            <property name="y-units">dBm</property>
+                            <property name="n-series">1</property>
+                            <property name="hexpand">True</property>
+                            <property name="vexpand">True</property>
+                            <property name="legend-position">none</property>
+                          </object>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="top_attach">2</property>
+                        <property name="width">1</property>
+                        <property name="height">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkFrame" id="sinr_level_graph_frame">
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
+                        <property name="can_focus">False</property>
+                        <property name="shadow_type">in</property>
+                        <child>
+                          <object class="MrmGraph" id="sinr_level_graph">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="title">SINR</property>
+                            <property name="y-max">9.0</property>
+                            <property name="y-min">-9.0</property>
+                            <property name="y-n-separators">4</property>
+                            <property name="y-units">dB</property>
+                            <property name="n-series">1</property>
+                            <property name="hexpand">True</property>
+                            <property name="vexpand">True</property>
+                            <property name="legend-position">none</property>
+                          </object>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">0</property>
+                        <property name="top_attach">3</property>
+                        <property name="width">1</property>
+                        <property name="height">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkFrame" id="io_graph_frame">
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
+                        <property name="can_focus">False</property>
+                        <property name="shadow_type">in</property>
+                        <child>
+                          <object class="MrmGraph" id="io_graph">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="title">Io</property>
+                            <property name="y-max">0</property>
+                            <property name="y-min">-106</property>
+                            <property name="y-n-separators">4</property>
+                            <property name="y-units">dBm</property>
+                            <property name="n-series">1</property>
+                            <property name="hexpand">True</property>
+                            <property name="vexpand">True</property>
+                            <property name="legend-position">none</property>
+                          </object>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="top_attach">3</property>
+                        <property name="width">1</property>
+                        <property name="height">1</property>
                       </packing>
                     </child>
                   </object>
@@ -593,750 +1315,23 @@
                     <property name="expand">False</property>
                     <property name="fill">True</property>
                     <property name="position">1</property>
-                    <property name="padding">4</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkBox" id="signal_graph_legend_lte_box">
-                    <property name="visible">True</property>
-                    <property name="sensitive">False</property>
-                    <property name="can_focus">False</property>
-                    <property name="orientation">vertical</property>
-                    <child>
-                      <object class="GtkBox" id="signal_graph_legend_lte_title_box">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="orientation">horizontal</property>
-                        <child>
-                          <object class="MrmColorIcon" id="signal_graph_legend_lte_icon">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">0</property>
-                            <property name="padding">4</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="signal_graph_legend_lte_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label">LTE</property>
-                            <attributes>
-                              <attribute name="weight" value="bold"/>
-                            </attributes>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">1</property>
-                            <property name="padding">4</property>
-                          </packing>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="position">0</property>
-                        <property name="padding">4</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkGrid" id="signal_graph_legend_lte_grid">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="column-homogeneous">True</property>
-                        <property name="margin-left">5</property>
-                        <property name="margin-right">5</property>
-                        <property name="margin-top">5</property>
-                        <property name="margin-bottom">5</property>
-                        <property name="row-spacing">5</property>
-                        <property name="column-spacing">5</property>
-                        <child>
-                          <object class="GtkLabel" id="signal_graph_legend_lte_rssi_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label">RSSI:</property>
-                            <property name="halign">end</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">0</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="signal_graph_legend_lte_rssi_value_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label">N/A</property>
-                            <property name="halign">start</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">0</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="signal_graph_legend_lte_rsrq_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label">RSRQ:</property>
-                            <property name="halign">end</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">1</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="signal_graph_legend_lte_rsrq_value_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label">N/A</property>
-                            <property name="halign">start</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">1</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="signal_graph_legend_lte_rsrp_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label">RSRP:</property>
-                            <property name="halign">end</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">2</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="signal_graph_legend_lte_rsrp_value_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label">N/A</property>
-                            <property name="halign">start</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">2</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="signal_graph_legend_lte_snr_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label">S/N:</property>
-                            <property name="halign">end</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">3</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="signal_graph_legend_lte_snr_value_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label">N/A</property>
-                            <property name="halign">start</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">3</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
-                          </packing>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="position">1</property>
-                        <property name="padding">4</property>
-                      </packing>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">True</property>
-                    <property name="position">2</property>
-                    <property name="padding">4</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkBox" id="signal_graph_legend_cdma_box">
-                    <property name="visible">True</property>
-                    <property name="sensitive">False</property>
-                    <property name="can_focus">False</property>
-                    <property name="orientation">vertical</property>
-                    <child>
-                      <object class="GtkBox" id="signal_graph_legend_cdma_title_box">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="orientation">horizontal</property>
-                        <child>
-                          <object class="MrmColorIcon" id="signal_graph_legend_cdma_icon">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">0</property>
-                            <property name="padding">4</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="signal_graph_legend_cdma_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label">CDMA</property>
-                            <attributes>
-                              <attribute name="weight" value="bold"/>
-                            </attributes>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">1</property>
-                            <property name="padding">4</property>
-                          </packing>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="position">0</property>
-                        <property name="padding">4</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkGrid" id="signal_graph_legend_cdma_grid">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="column-homogeneous">True</property>
-                        <property name="margin-left">5</property>
-                        <property name="margin-right">5</property>
-                        <property name="margin-top">5</property>
-                        <property name="margin-bottom">5</property>
-                        <property name="row-spacing">5</property>
-                        <property name="column-spacing">5</property>
-                        <child>
-                          <object class="GtkLabel" id="signal_graph_legend_cdma_rssi_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label">RSSI:</property>
-                            <property name="halign">end</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">0</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="signal_graph_legend_cdma_rssi_value_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label">N/A</property>
-                            <property name="halign">start</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">0</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="signal_graph_legend_cdma_ecio_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label">ECIO:</property>
-                            <property name="halign">end</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">1</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="signal_graph_legend_cdma_ecio_value_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label">N/A</property>
-                            <property name="halign">start</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">1</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
-                          </packing>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="position">1</property>
-                        <property name="padding">4</property>
-                      </packing>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">True</property>
-                    <property name="position">3</property>
-                    <property name="padding">4</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkBox" id="signal_graph_legend_evdo_box">
-                    <property name="visible">True</property>
-                    <property name="sensitive">False</property>
-                    <property name="can_focus">False</property>
-                    <property name="orientation">vertical</property>
-                    <child>
-                      <object class="GtkBox" id="signal_graph_legend_evdo_title_box">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="orientation">horizontal</property>
-                        <child>
-                          <object class="MrmColorIcon" id="signal_graph_legend_evdo_icon">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">0</property>
-                            <property name="padding">4</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="signal_graph_legend_evdo_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label">EVDO</property>
-                            <attributes>
-                              <attribute name="weight" value="bold"/>
-                            </attributes>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">1</property>
-                            <property name="padding">4</property>
-                          </packing>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="position">0</property>
-                        <property name="padding">4</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkGrid" id="signal_graph_legend_evdo_grid">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="column-homogeneous">True</property>
-                        <property name="margin-left">5</property>
-                        <property name="margin-right">5</property>
-                        <property name="margin-top">5</property>
-                        <property name="margin-bottom">5</property>
-                        <property name="row-spacing">5</property>
-                        <property name="column-spacing">5</property>
-                        <child>
-                          <object class="GtkLabel" id="signal_graph_legend_evdo_rssi_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label">RSSI:</property>
-                            <property name="halign">end</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">0</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="signal_graph_legend_evdo_rssi_value_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label">N/A</property>
-                            <property name="halign">start</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">0</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="signal_graph_legend_evdo_ecio_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label">ECIO:</property>
-                            <property name="halign">end</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">1</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="signal_graph_legend_evdo_ecio_value_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label">N/A</property>
-                            <property name="halign">start</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">1</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="signal_graph_legend_evdo_sinr_level_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label">SINR:</property>
-                            <property name="halign">end</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">2</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="signal_graph_legend_evdo_sinr_level_value_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label">N/A</property>
-                            <property name="halign">start</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">2</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="signal_graph_legend_evdo_io_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label">IO:</property>
-                            <property name="halign">end</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">3</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="signal_graph_legend_evdo_io_value_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label">N/A</property>
-                            <property name="halign">start</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">3</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
-                          </packing>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="position">1</property>
-                        <property name="padding">4</property>
-                      </packing>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">True</property>
-                    <property name="position">4</property>
-                    <property name="padding">4</property>
+                    <property name="padding">0</property>
                   </packing>
                 </child>
               </object>
               <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
                 <property name="position">0</property>
-                <property name="padding">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkGrid" id="signal_graph_grid">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="column-homogeneous">True</property>
-                <property name="margin-left">5</property>
-                <property name="margin-right">5</property>
-                <property name="margin-top">5</property>
-                <property name="margin-bottom">5</property>
-                <property name="hexpand">True</property>
-                <property name="vexpand">True</property>
-                <property name="row-spacing">5</property>
-                <property name="column-spacing">5</property>
-                <child>
-                  <object class="GtkFrame" id="rssi_graph_frame">
-                    <property name="visible">True</property>
-                    <property name="sensitive">False</property>
-                    <property name="can_focus">False</property>
-                    <property name="shadow_type">in</property>
-                    <child>
-                      <object class="MrmGraph" id="rssi_graph">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="title">RSSI</property>
-                        <property name="y-max">-49.0</property>
-                        <property name="y-min">-113.0</property>
-                        <property name="y-n-separators">4</property>
-                        <property name="y-units">dBm</property>
-                        <property name="n-series">5</property>
-                        <property name="hexpand">True</property>
-                        <property name="vexpand">True</property>
-                        <property name="legend-position">none</property>
-                      </object>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="left_attach">0</property>
-                    <property name="top_attach">0</property>
-                    <property name="width">1</property>
-                    <property name="height">2</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkFrame" id="ecio_graph_frame">
-                    <property name="visible">True</property>
-                    <property name="sensitive">False</property>
-                    <property name="can_focus">False</property>
-                    <property name="shadow_type">in</property>
-                    <child>
-                      <object class="MrmGraph" id="ecio_graph">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="title">Ec/Io</property>
-                        <property name="y-max">0.0</property>
-                        <property name="y-min">-50.0</property>
-                        <property name="y-n-separators">4</property>
-                        <property name="y-units">dBm</property>
-                        <property name="n-series">5</property>
-                        <property name="hexpand">True</property>
-                        <property name="vexpand">True</property>
-                        <property name="legend-position">none</property>
-                      </object>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="left_attach">1</property>
-                    <property name="top_attach">0</property>
-                    <property name="width">1</property>
-                    <property name="height">1</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkFrame" id="rsrq_graph_frame">
-                    <property name="visible">True</property>
-                    <property name="sensitive">False</property>
-                    <property name="can_focus">False</property>
-                    <property name="shadow_type">in</property>
-                    <child>
-                      <object class="MrmGraph" id="rsrq_graph">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="title">RSRQ</property>
-                        <property name="y-max">-3</property>
-                        <property name="y-min">-20</property>
-                        <property name="y-n-separators">4</property>
-                        <property name="y-units">dB</property>
-                        <property name="n-series">1</property>
-                        <property name="hexpand">True</property>
-                        <property name="vexpand">True</property>
-                        <property name="legend-position">none</property>
-                      </object>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="left_attach">1</property>
-                    <property name="top_attach">1</property>
-                    <property name="width">1</property>
-                    <property name="height">1</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkFrame" id="rsrp_graph_frame">
-                    <property name="visible">True</property>
-                    <property name="sensitive">False</property>
-                    <property name="can_focus">False</property>
-                    <property name="shadow_type">in</property>
-                    <child>
-                      <object class="MrmGraph" id="rsrp_graph">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="title">RSRP</property>
-                        <property name="y-max">-44</property>
-                        <property name="y-min">-140</property>
-                        <property name="y-n-separators">4</property>
-                        <property name="y-units">dBm</property>
-                        <property name="n-series">1</property>
-                        <property name="hexpand">True</property>
-                        <property name="vexpand">True</property>
-                        <property name="legend-position">none</property>
-                      </object>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="left_attach">0</property>
-                    <property name="top_attach">2</property>
-                    <property name="width">1</property>
-                    <property name="height">1</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkFrame" id="snr_graph_frame">
-                    <property name="visible">True</property>
-                    <property name="sensitive">False</property>
-                    <property name="can_focus">False</property>
-                    <property name="shadow_type">in</property>
-                    <child>
-                      <object class="MrmGraph" id="snr_graph">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="title">S/N</property>
-                        <property name="y-max">50</property>
-                        <property name="y-min">-50</property>
-                        <property name="y-n-separators">4</property>
-                        <property name="y-units">dBm</property>
-                        <property name="n-series">1</property>
-                        <property name="hexpand">True</property>
-                        <property name="vexpand">True</property>
-                        <property name="legend-position">none</property>
-                      </object>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="left_attach">1</property>
-                    <property name="top_attach">2</property>
-                    <property name="width">1</property>
-                    <property name="height">1</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkFrame" id="sinr_level_graph_frame">
-                    <property name="visible">True</property>
-                    <property name="sensitive">False</property>
-                    <property name="can_focus">False</property>
-                    <property name="shadow_type">in</property>
-                    <child>
-                      <object class="MrmGraph" id="sinr_level_graph">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="title">SINR</property>
-                        <property name="y-max">9.0</property>
-                        <property name="y-min">-9.0</property>
-                        <property name="y-n-separators">4</property>
-                        <property name="y-units">dB</property>
-                        <property name="n-series">1</property>
-                        <property name="hexpand">True</property>
-                        <property name="vexpand">True</property>
-                        <property name="legend-position">none</property>
-                      </object>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="left_attach">0</property>
-                    <property name="top_attach">3</property>
-                    <property name="width">1</property>
-                    <property name="height">1</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkFrame" id="io_graph_frame">
-                    <property name="visible">True</property>
-                    <property name="sensitive">False</property>
-                    <property name="can_focus">False</property>
-                    <property name="shadow_type">in</property>
-                    <child>
-                      <object class="MrmGraph" id="io_graph">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="title">Io</property>
-                        <property name="y-max">0</property>
-                        <property name="y-min">-106</property>
-                        <property name="y-n-separators">4</property>
-                        <property name="y-units">dBm</property>
-                        <property name="n-series">1</property>
-                        <property name="hexpand">True</property>
-                        <property name="vexpand">True</property>
-                        <property name="legend-position">none</property>
-                      </object>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="left_attach">1</property>
-                    <property name="top_attach">3</property>
-                    <property name="width">1</property>
-                    <property name="height">1</property>
-                  </packing>
-                </child>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">1</property>
-                <property name="padding">0</property>
+                <property name="name">signal_box</property>
+                <property name="title">Signal</property>
               </packing>
             </child>
           </object>
         </child>
         <child type="tab">
-          <object class="GtkLabel" id="signal-tab">
+          <object class="GtkLabel" id="graphs-tab">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="label" translatable="yes">Signal information</property>
+            <property name="label">Graphs</property>
           </object>
           <packing>
             <property name="position">1</property>
