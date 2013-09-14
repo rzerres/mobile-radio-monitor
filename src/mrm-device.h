@@ -36,6 +36,14 @@ typedef enum {
     MRM_DEVICE_STATUS_SIM_ERROR,
 } MrmDeviceStatus;
 
+typedef enum {
+    MRM_DEVICE_ACT_GSM  = 1 << 0,
+    MRM_DEVICE_ACT_UMTS = 1 << 1,
+    MRM_DEVICE_ACT_LTE  = 1 << 2,
+    MRM_DEVICE_ACT_CDMA = 1 << 3,
+    MRM_DEVICE_ACT_EVDO = 1 << 4,
+} MrmDeviceAct;
+
 typedef struct _MrmDevice        MrmDevice;
 typedef struct _MrmDeviceClass   MrmDeviceClass;
 typedef struct _MrmDevicePrivate MrmDevicePrivate;
@@ -49,6 +57,9 @@ struct _MrmDeviceClass {
     GObjectClass parent_class;
 
     /* Signals */
+
+    void (*act_updated) (MrmDevice *device,
+                         MrmDeviceAct act);
 
     void (*rssi_updated) (MrmDevice *device,
                           gdouble gsm_rssi,

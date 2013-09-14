@@ -34,6 +34,7 @@ enum {
 static GParamSpec *properties[PROP_LAST];
 
 enum {
+    SIGNAL_ACT_UPDATED,
     SIGNAL_RSSI_UPDATED,
     SIGNAL_ECIO_UPDATED,
     SIGNAL_SINR_LEVEL_UPDATED,
@@ -123,6 +124,7 @@ qmi_client_nas_get_signal_info_ready (QmiClientNas *client,
         gboolean has_lte;
         gboolean has_cdma;
         gboolean has_evdo;
+        MrmDeviceAct act = 0;
 
         /* Get signal info */
         has_gsm = qmi_message_nas_get_signal_info_output_get_gsm_signal_strength (output, &gsm_rssi, NULL);
@@ -130,6 +132,22 @@ qmi_client_nas_get_signal_info_ready (QmiClientNas *client,
         has_lte = qmi_message_nas_get_signal_info_output_get_lte_signal_strength (output, &lte_rssi, &lte_rsrq, &lte_rsrp, &lte_snr, NULL);
         has_cdma = qmi_message_nas_get_signal_info_output_get_cdma_signal_strength (output, &cdma_rssi, &cdma_ecio, NULL);
         has_evdo = qmi_message_nas_get_signal_info_output_get_hdr_signal_strength (output, &evdo_rssi, &evdo_ecio, &evdo_sinr_level, &evdo_io, NULL);
+
+        if (has_gsm)
+            act |= MRM_DEVICE_ACT_GSM;
+        if (has_umts)
+            act |= MRM_DEVICE_ACT_UMTS;
+        if (has_lte)
+            act |= MRM_DEVICE_ACT_LTE;
+        if (has_cdma)
+            act |= MRM_DEVICE_ACT_CDMA;
+        if (has_evdo)
+            act |= MRM_DEVICE_ACT_EVDO;
+
+        g_signal_emit (self,
+                       signals[SIGNAL_ACT_UPDATED],
+                       0,
+                       act);
 
         g_signal_emit (self,
                        signals[SIGNAL_RSSI_UPDATED],
@@ -1125,6 +1143,18 @@ mrm_device_class_init (MrmDeviceClass *klass)
                            MRM_DEVICE_STATUS_UNKNOWN,
                            G_PARAM_READABLE);
     g_object_class_install_property (object_class, PROP_STATUS, properties[PROP_STATUS]);
+
+    signals[SIGNAL_ACT_UPDATED] =
+        g_signal_new ("act-updated",
+                      G_OBJECT_CLASS_TYPE (object_class),
+                      G_SIGNAL_RUN_FIRST,
+                      G_STRUCT_OFFSET (MrmDeviceClass, act_updated),
+                      NULL, NULL,
+                      g_cclosure_marshal_generic,
+					  G_TYPE_NONE,
+                      1,
+                      MRM_TYPE_DEVICE_ACT);
+
 
     signals[SIGNAL_RSSI_UPDATED] =
         g_signal_new ("rssi-updated",
