@@ -20,6 +20,7 @@
 #include "mrm-window.h"
 #include "mrm-device.h"
 #include "mrm-signal-tab.h"
+#include "mrm-power-tab.h"
 
 #define NOTEBOOK_TAB_DEVICE_LIST 0
 #define NOTEBOOK_TAB_GRAPHS      1
@@ -48,6 +49,7 @@ struct _MrmWindowPrivate {
 
     /* Graphs */
     GtkWidget *signal_box;
+    GtkWidget *power_box;
 
     guint initial_scan_done_id;
     guint device_detection_id;
@@ -73,6 +75,7 @@ change_current_device (MrmWindow *self,
     g_clear_object (&self->priv->current);
 
     mrm_signal_tab_change_current_device (MRM_SIGNAL_TAB (self->priv->signal_box), new_device);
+    mrm_power_tab_change_current_device (MRM_POWER_TAB (self->priv->power_box), new_device);
 
     if (new_device)
         /* Keep a ref to current device */
@@ -516,9 +519,10 @@ mrm_window_init (MrmWindow *self)
 {
     self->priv = mrm_window_get_instance_private (self);
 
-    /* Ensure we register the MrmGraph and MrmColorIcon before initiating
+    /* Ensure we register the MrmSignalTab and MrmPowerTab before initiating
      * the template */
     g_warn_if_fail (mrm_signal_tab_get_type ());
+    g_warn_if_fail (mrm_power_tab_get_type ());
 
     gtk_widget_init_template (GTK_WIDGET (self));
 
@@ -608,4 +612,5 @@ mrm_window_class_init (MrmWindowClass *klass)
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, attempts_label);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, pin_check_spinner_box);
     gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, signal_box);
+    gtk_widget_class_bind_template_child_private (widget_class, MrmWindow, power_box);
 }

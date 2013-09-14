@@ -340,6 +340,14 @@
                 <property name="title">Signal</property>
               </packing>
             </child>
+            <child>
+              <object class="MrmPowerTab" id="power_box" />
+              <packing>
+                <property name="name">power_box</property>
+                <property name="title">Power</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
           </object>
         </child>
         <child type="tab">

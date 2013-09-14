@@ -12,6 +12,7 @@ mobile_radio_monitor_SOURCES = \
 	mrm-graph.h mrm-graph.c \
 	mrm-device.h mrm-device.c \
 	mrm-signal-tab.h mrm-signal-tab.c \
+	mrm-power-tab.h mrm-power-tab.c \
 	mrm-window.h mrm-window.c \
 	mrm-app.h mrm-app.c \
 	mrm-main.c
@@ -98,4 +99,5 @@ CLEANFILES = \
 
 EXTRA_DIST = \
 	mrm-window.ui \
-	mrm-signal-tab.ui
+	mrm-signal-tab.ui \
+	mrm-power-tab.ui

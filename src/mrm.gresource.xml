@@ -3,5 +3,6 @@
   <gresource prefix="/es/aleksander/mrm">
     <file preprocess="xml-stripblanks">mrm-window.ui</file>
     <file preprocess="xml-stripblanks">mrm-signal-tab.ui</file>
+    <file preprocess="xml-stripblanks">mrm-power-tab.ui</file>
   </gresource>
 </gresources>
