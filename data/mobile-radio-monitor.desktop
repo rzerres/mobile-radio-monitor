@@ -1,8 +1,8 @@
 [Desktop Entry]
 Name=Mobile Radio Monitor
 Comment=A monitor for mobile radio environment parameters
-TryExec=mobile-radio-monitor
-Exec=mobile-radio-monitor
+TryExec=pkexec mobile-radio-monitor
+Exec=pkexec mobile-radio-monitor
 Icon=mobile-radio-monitor
 Terminal=false
 Type=Application

@@ -10,3 +10,6 @@ desktop_DATA = mobile-radio-monitor.desktop
 # All credits go to jimmac, who I believe is the one who draw this one.
 icon256dir = $(datadir)/icons/hicolor/256x256/apps
 icon256_DATA = mobile-radio-monitor.png
+
+polkit_policydir = $(datadir)/polkit-1/actions
+polkit_policy_DATA = es.aleksander.MobileRadioMonitor.pkexec.policy
