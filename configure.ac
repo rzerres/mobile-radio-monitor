@@ -50,6 +50,7 @@ AC_SUBST(GLIB_COMPILE_RESOURCES)
 AC_CONFIG_FILES([
 Makefile
 build-aux/Makefile
+data/Makefile
 src/Makefile
 tests/Makefile
 ])
