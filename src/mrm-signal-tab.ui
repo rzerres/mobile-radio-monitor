@@ -212,7 +212,7 @@
                   <object class="GtkLabel" id="legend_umts_ecio_label">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label">ECIO:</property>
+                    <property name="label">Ec/Io:</property>
                     <property name="halign">end</property>
                   </object>
                   <packing>
@@ -528,7 +528,7 @@
                   <object class="GtkLabel" id="legend_cdma_ecio_label">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label">ECIO:</property>
+                    <property name="label">Ec/Io:</property>
                     <property name="halign">end</property>
                   </object>
                   <packing>
@@ -658,7 +658,7 @@
                   <object class="GtkLabel" id="legend_evdo_ecio_label">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label">ECIO:</property>
+                    <property name="label">Ec/Io:</property>
                     <property name="halign">end</property>
                   </object>
                   <packing>
@@ -714,7 +714,7 @@
                   <object class="GtkLabel" id="legend_evdo_io_label">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label">IO:</property>
+                    <property name="label">Io:</property>
                     <property name="halign">end</property>
                   </object>
                   <packing>
