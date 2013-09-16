@@ -386,7 +386,11 @@ about_cb (GSimpleAction *action,
                            "name",     "Mobile Radio Monitor",
                            "version",  PACKAGE_VERSION,
                            "comments", "A monitor for mobile radio environment parameters",
+                           "copyright", "Copyright \xc2\xa9 2013 Aleksander Morgado",
+                           "logo-icon-name", "mobile-radio-monitor",
                            "authors",  authors,
+                           "license", "GPLv3+",
+                           "wrap-license", TRUE,
                            NULL);
 }
 
@@ -503,7 +507,7 @@ mrm_app_init (MrmApp *self)
 
     self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, MRM_TYPE_APP, MrmAppPrivate);
 
-    g_set_application_name ("MobileRadioMonitor");
+    g_set_application_name ("Mobile Radio Monitor");
     gtk_window_set_default_icon_name ("mobile-radio-monitor");
 
     /* Setup UDev client */
