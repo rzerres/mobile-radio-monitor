@@ -92,6 +92,11 @@ mrm-resources.h: mrm.gresource.xml $(resource_file_dependencies)
 
 ################################################################################
 
+BUILT_SOURCES = \
+	mrm-resources.h mrm-resources.c \
+	mrm-error-types.h mrm-error-types.c \
+	mrm-enum-types.h mrm-enum-types.c
+
 CLEANFILES = \
 	mrm-resources.h mrm-resources.c \
 	mrm-error-types.h mrm-error-types.c \
