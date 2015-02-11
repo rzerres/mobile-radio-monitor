@@ -105,4 +105,5 @@ CLEANFILES = \
 EXTRA_DIST = \
 	mrm-window.ui \
 	mrm-signal-tab.ui \
-	mrm-power-tab.ui
+	mrm-power-tab.ui \
+	mrm.gresource.xml
