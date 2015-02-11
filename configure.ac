@@ -1,6 +1,6 @@
 AC_PREREQ([2.64])
 
-AC_INIT([mobile-radio-monitor], [0.1], [aleksander@gnu.org], [mobile-radio-monitor])
+AC_INIT([mobile-radio-monitor], [1.0], [aleksander@aleksander.es], [mobile-radio-monitor])
 
 AC_CONFIG_HEADERS(config.h)
 AC_CONFIG_SRCDIR(src/mrm-main.c)
