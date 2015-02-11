@@ -331,7 +331,6 @@
             <property name="can_focus">False</property>
             <property name="transition-type">slide-right</property>
             <property name="transition-duration">500</property>
-            <property name="visible-child-name">signal_box</property>
             <child>
               <object class="MrmSignalTab" id="signal_box" />
               <packing>
