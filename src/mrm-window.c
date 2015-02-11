@@ -346,7 +346,7 @@ device_added_cb (MrmApp *application,
                                            mrm_device_get_manufacturer (device));
     button_label = gtk_label_new (NULL);
     gtk_label_set_markup (GTK_LABEL (button_label), button_label_markup);
-    gtk_misc_set_alignment (GTK_MISC (button_label), 0.0f, 0.5f);
+    gtk_widget_set_valign (GTK_WIDGET (button_label), 0.5f);
 
 #if GTK_CHECK_VERSION(3,12,0)
     gtk_widget_set_margin_start (button_label, 20);
