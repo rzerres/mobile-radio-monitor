@@ -10,7 +10,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * Copyright (C) 2013 Aleksander Morgado <aleksander@gnu.org>
+ * Copyright (C) 2015 Aleksander Morgado <aleksander@aleksander.es>
  */
 
 #include <config.h>
@@ -378,7 +378,7 @@ about_cb (GSimpleAction *action,
 {
     MrmApp *self = MRM_APP (user_data);
     const gchar *authors[] = {
-        "Aleksander Morgado <aleksander@gnu.org>",
+        "Aleksander Morgado <aleksander@aleksander.es>",
         NULL
     };
 
@@ -386,7 +386,7 @@ about_cb (GSimpleAction *action,
                            "name",     "Mobile Radio Monitor",
                            "version",  PACKAGE_VERSION,
                            "comments", "A monitor for mobile radio environment parameters",
-                           "copyright", "Copyright \xc2\xa9 2013 Aleksander Morgado",
+                           "copyright", "Copyright \xc2\xa9 2013-2015 Aleksander Morgado",
                            "logo-icon-name", "mobile-radio-monitor",
                            "authors",  authors,
                            "license", "GPLv3+",

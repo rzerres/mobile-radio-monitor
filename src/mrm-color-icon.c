@@ -11,7 +11,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details:
  *
- * Copyright (C) 2013 Aleksander Morgado <aleksander@gnu.org>
+ * Copyright (C) 2013-2015 Aleksander Morgado <aleksander@aleksander.es>
  *
  * Based on the Gnome system monitor colour pickers
  *  Copyright (C) 2007 Karl Lattimer <karl@qdh.org.uk>

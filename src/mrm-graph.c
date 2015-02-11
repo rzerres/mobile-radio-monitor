@@ -10,7 +10,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details:
  *
- * Copyright (C) 2013 Aleksander Morgado <aleksander@gnu.org>
+ * Copyright (C) 2013-2015 Aleksander Morgado <aleksander@aleksander.es>
  *
  * Graph drawing based on gnome-system-monitor's LoadGraph implementation.
  */
