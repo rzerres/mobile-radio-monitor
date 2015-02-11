@@ -153,7 +153,7 @@ qmi_client_nas_get_tx_rx_info_ready (QmiClientNas *client,
 
     output = qmi_client_nas_get_tx_rx_info_finish (client, res, &error);
     if (!output || !qmi_message_nas_get_tx_rx_info_output_get_result (output, &error)) {
-        g_warning ("Error loading tx/rx info: %s", error->message);
+        g_debug ("Error loading tx/rx info: %s", error->message);
         g_error_free (error);
     } else {
         gboolean rx0_tuned = FALSE;
@@ -310,7 +310,7 @@ qmi_client_nas_get_signal_info_ready (QmiClientNas *client,
 
     output = qmi_client_nas_get_signal_info_finish (client, res, &error);
     if (!output || !qmi_message_nas_get_signal_info_output_get_result (output, &error)) {
-        g_warning ("Error loading signal info: %s", error->message);
+        g_debug ("Error loading signal info: %s", error->message);
         g_error_free (error);
     } else {
         gint8 gsm_rssi  = -125;
