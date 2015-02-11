@@ -268,7 +268,7 @@ graph_background_clear (MrmGraph *self)
     self->priv->background = NULL;
 }
 
-static
+static void
 graph_background_pattern_create (MrmGraph *self)
 {
     GtkAllocation allocation;

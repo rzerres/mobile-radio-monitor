@@ -32,6 +32,8 @@ update (gpointer unused)
     value += 1.0;
     if (value > -49.0)
         value = -113.0;
+
+    return TRUE;
 }
 
 gint
