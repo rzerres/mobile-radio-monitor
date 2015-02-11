@@ -61,6 +61,6 @@ echo "
     mobile-radio-monitor $VERSION
     ==============================================
 
-    compiler:                ${CC}
-    cflags:                  ${CFLAGS}
+    compiler: ${CC}
+    cflags:   ${CFLAGS}
 "
