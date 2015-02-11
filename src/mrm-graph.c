@@ -611,7 +611,12 @@ constructed (GObject *object)
                       "configure-event",
                       G_CALLBACK (graph_configure),
                       self);
+#if GTK_CHECK_VERSION(3,12,0)
+    gtk_widget_set_margin_start (self->priv->drawing_area, 8);
+#else
     gtk_widget_set_margin_left (self->priv->drawing_area, 8);
+#endif
+
     gtk_widget_set_margin_top (self->priv->drawing_area, 4);
     gtk_widget_set_margin_bottom (self->priv->drawing_area, 4);
 
@@ -625,7 +630,11 @@ constructed (GObject *object)
         /* Legend box */
         self->priv->legend_box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 8);
         gtk_widget_set_hexpand (self->priv->legend_box, TRUE);
+#if GTK_CHECK_VERSION(3,12,0)
+        gtk_widget_set_margin_start (self->priv->legend_box, 16);
+#else
         gtk_widget_set_margin_left (self->priv->legend_box, 16);
+#endif
         gtk_widget_set_margin_top (self->priv->legend_box, 4);
         gtk_widget_set_margin_bottom (self->priv->legend_box, 4);
         gtk_widget_show (self->priv->legend_box);

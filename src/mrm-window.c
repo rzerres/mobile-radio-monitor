@@ -347,8 +347,14 @@ device_added_cb (MrmApp *application,
     button_label = gtk_label_new (NULL);
     gtk_label_set_markup (GTK_LABEL (button_label), button_label_markup);
     gtk_misc_set_alignment (GTK_MISC (button_label), 0.0f, 0.5f);
+
+#if GTK_CHECK_VERSION(3,12,0)
+    gtk_widget_set_margin_start (button_label, 20);
+    gtk_widget_set_margin_end (button_label, 20);
+#else
     gtk_widget_set_margin_left (button_label, 20);
     gtk_widget_set_margin_right (button_label, 20);
+#endif
     gtk_widget_set_margin_top (button_label, 12);
     gtk_widget_set_margin_bottom (button_label, 12);
     gtk_widget_set_halign (button_label, GTK_ALIGN_START);
@@ -357,8 +363,14 @@ device_added_cb (MrmApp *application,
     gtk_box_pack_start (GTK_BOX (box), button_label, TRUE, TRUE, 0);
 
     status = gtk_label_new (NULL);
+#if GTK_CHECK_VERSION(3,12,0)
+    gtk_widget_set_margin_start (status, 20);
+    gtk_widget_set_margin_end (status, 20);
+#else
     gtk_widget_set_margin_left (status, 20);
     gtk_widget_set_margin_right (status, 20);
+#endif
+
     gtk_widget_set_halign (status, GTK_ALIGN_END);
     gtk_widget_set_valign (status, GTK_ALIGN_CENTER);
     gtk_box_pack_end (GTK_BOX (box), status, FALSE, FALSE, 0);
