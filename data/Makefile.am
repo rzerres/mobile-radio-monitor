@@ -1,4 +1,5 @@
 
+DISTCLEANFILES =
 EXTRA_DIST = \
 	mobile-radio-monitor.desktop \
 	mobile-radio-monitor.png
@@ -11,5 +12,12 @@ desktop_DATA = mobile-radio-monitor.desktop
 icon256dir = $(datadir)/icons/hicolor/256x256/apps
 icon256_DATA = mobile-radio-monitor.png
 
-polkit_policydir = $(datadir)/polkit-1/actions
-polkit_policy_DATA = es.aleksander.MobileRadioMonitor.pkexec.policy
+# Setup policy
+edit = @sed -e 's|@bindir[@]|$(bindir)|g'
+es.aleksander.MobileRadioMonitor.pkexec.policy: es.aleksander.MobileRadioMonitor.pkexec.policy.in
+	$(edit) $< >$@
+
+polkit_policydir    = $(datadir)/polkit-1/actions
+polkit_policy_DATA  = es.aleksander.MobileRadioMonitor.pkexec.policy
+DISTCLEANFILES     += es.aleksander.MobileRadioMonitor.pkexec.policy
+EXTRA_DIST         += es.aleksander.MobileRadioMonitor.pkexec.policy.in

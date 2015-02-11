@@ -5,7 +5,7 @@
 <policyconfig>
 
   <vendor>Aleksander Morgado</vendor>
-  <vendor_url>http://sigquit.wordpress.com</vendor_url>
+  <vendor_url>https://aleksander.es</vendor_url>
 
   <action id="es.aleksander.MobileRadioMonitor.pkexec.run-mobile-radio-monitor">
     <description>Run the Mobile Radio Monitor</description>
@@ -16,7 +16,7 @@
       <allow_inactive>no</allow_inactive>
       <allow_active>auth_self_keep</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/mobile-radio-monitor</annotate>
+    <annotate key="org.freedesktop.policykit.exec.path">@bindir@/mobile-radio-monitor</annotate>
     <annotate key="org.freedesktop.policykit.exec.allow_gui">yes</annotate>
   </action>
 

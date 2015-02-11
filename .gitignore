@@ -17,6 +17,8 @@ missing
 stamp-h1
 config.*
 
+data/es.aleksander.MobileRadioMonitor.pkexec.policy
+
 src/mobile-radio-monitor
 src/mrm-resources.h
 src/mrm-resources.c
