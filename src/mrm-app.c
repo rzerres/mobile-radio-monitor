@@ -13,7 +13,10 @@
  * Copyright (C) 2015 Aleksander Morgado <aleksander@aleksander.es>
  */
 
+#ifndef CMAKE_BUILD
 #include <config.h>
+#endif
+
 #include <gudev/gudev.h>
 
 #include "mrm-app.h"

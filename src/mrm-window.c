@@ -13,7 +13,10 @@
  * Copyright (C) 2013-2015 Aleksander Morgado <aleksander@aleksander.es>
  */
 
+#ifndef CMAKE_BUILD
 #include <config.h>
+#endif
+
 #include <gtk/gtk.h>
 #include <libqmi-glib.h>
 

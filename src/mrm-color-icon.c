@@ -17,7 +17,9 @@
  *  Copyright (C) 2007 Karl Lattimer <karl@qdh.org.uk>
  */
 
+#ifndef CMAKE_BUILD
 #include <config.h>
+#endif
 
 #include <gtk/gtk.h>
 #include <cairo.h>
