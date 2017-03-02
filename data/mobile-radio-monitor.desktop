@@ -1,6 +1,7 @@
 [Desktop Entry]
 Name=Mobile Radio Monitor
 Comment=A monitor for mobile radio environment parameters
+Comment[de]=Ein Monitor zur Anzeige von mobilen Breitband Parametern
 TryExec=pkexec mobile-radio-monitor
 Exec=pkexec mobile-radio-monitor
 Icon=mobile-radio-monitor
